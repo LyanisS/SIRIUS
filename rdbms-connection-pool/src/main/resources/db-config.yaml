@@ -1,6 +1,6 @@
 databaseName: "pds"
-host: "127.0.0.1"
+host: "pcc-db.e.lyanis.net"
 port: 3306
-username : "root"
+username : "pds"
 password: ""
 poolSize: 1
