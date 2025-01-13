@@ -13,6 +13,7 @@ public class Student {
     private  String name;
     private  String firstname;
     private  String group;
+    private  int id;
 
 
     public Student() {
@@ -44,6 +45,10 @@ public class Student {
         return group;
     }
 
+    public int getId() {
+        return id;
+    }
+
     @JsonProperty("student_name")
     public void setName(String name) {
         this.name = name;
@@ -57,6 +62,11 @@ public class Student {
     @JsonProperty("student_group")
     public void setGroup(String group) {
         this.group = group;
+    }
+
+    @JsonProperty("student_id")
+    public void setId(int id) {
+        this.id = id;
     }
 
     private void setFieldsFromResulset(final ResultSet resultSet, final String ... fieldNames )

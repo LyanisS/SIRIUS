@@ -1,6 +1,7 @@
 package edu.ezip.ing1.pds;
 
 import de.vandermeer.asciitable.AsciiTable;
+import de.vandermeer.asciithemes.a7.A7_Grids;
 import edu.ezip.ing1.pds.business.dto.Student;
 import edu.ezip.ing1.pds.business.dto.Students;
 import edu.ezip.ing1.pds.client.commons.ClientRequest;
@@ -29,11 +30,14 @@ public class MainFrontEnd {
         studentService.insertStudents();
         Students students = studentService.selectStudents();
         final AsciiTable asciiTable = new AsciiTable();
+        asciiTable.addRule();
+        asciiTable.addRow("id", "firstname", "name", "group");
         for (final Student student : students.getStudents()) {
             asciiTable.addRule();
-            asciiTable.addRow(student.getFirstname(), student.getName(), student.getGroup());
+            asciiTable.addRow(student.getId(), student.getFirstname(), student.getName(), student.getGroup());
         }
         asciiTable.addRule();
+        asciiTable.getContext().setGrid(A7_Grids.minusBarPlusEquals());
         logger.debug("\n{}\n", asciiTable.render());
     }
 }

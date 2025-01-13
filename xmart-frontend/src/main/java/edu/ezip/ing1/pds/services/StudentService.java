@@ -26,7 +26,7 @@ public class StudentService {
     private final static String studentsToBeInserted = "students-to-be-inserted.yaml";
 
     final String insertRequestOrder = "INSERT_STUDENT";
-    final String selectRequestOrder = "SELECT_STUDENTS";
+    final String selectRequestOrder = "SELECT_ALL_STUDENTS";
 
     private final NetworkConfig networkConfig;
 
