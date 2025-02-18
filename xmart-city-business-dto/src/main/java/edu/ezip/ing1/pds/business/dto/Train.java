@@ -7,57 +7,120 @@ import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
+
+
 
 @JsonRootName(value = "train")
 public class Train {
-    private int train_id;
-    private int train_status_id;
-    private int track_element_id;
-    private String station_name;
-    private LocalDateTime time_in_station;
+    private int trainId;
+    private int trainStatusId;
+    private int trackElementId;
+    private String currentStation;
+    private String direction;
+    private String arrivalTime;
 
     public Train() {
     }
 
-    public int getTrain_id() {
-        return train_id;
+    public final Train build(final ResultSet resultSet)
+            throws SQLException, NoSuchFieldException, IllegalAccessException {
+        setFieldsFromResultset(resultSet, 
+            "train_id", 
+            "train_status_id",
+            "track_element_id",
+            "station_name",
+            "direction",
+            "schedule_datetime"
+        );
+        return this;
     }
 
-    public void setTrain_id(int train_id) {
-        this.train_id = train_id;
+    public final PreparedStatement build(PreparedStatement preparedStatement)
+            throws SQLException, NoSuchFieldException, IllegalAccessException {
+        return buildPreparedStatement(preparedStatement, 
+            trainId, 
+            trainStatusId,
+            trackElementId
+        );
     }
 
-    public int getTrain_status_id() {
-        return train_status_id;
+    public Train(int trainId, int trainStatusId, int trackElementId) {
+        this.trainId = trainId;
+        this.trainStatusId = trainStatusId;
+        this.trackElementId = trackElementId;
     }
 
-    public void setTrain_status_id(int train_status_id) {
-        this.train_status_id = train_status_id;
+
+    @JsonProperty("train_id")
+    public int getTrainId() { return trainId; }
+
+    @JsonProperty("train_status_id")
+    public int getTrainStatusId() { return trainStatusId; }
+
+    @JsonProperty("track_element_id")
+    public int getTrackElementId() { return trackElementId; }
+
+    @JsonProperty("current_station")
+    public String getCurrentStation() { return currentStation; }
+
+    @JsonProperty("direction")
+    public String getDirection() { return direction; }
+
+    @JsonProperty("arrival_time")
+    public String getArrivalTime() { return arrivalTime; }
+
+    
+    @JsonProperty("train_id")
+    public void setTrainId(int trainId) { this.trainId = trainId; }
+
+    @JsonProperty("train_status_id")
+    public void setTrainStatusId(int trainStatusId) { this.trainStatusId = trainStatusId; }
+
+    @JsonProperty("track_element_id")
+    public void setTrackElementId(int trackElementId) { this.trackElementId = trackElementId; }
+
+    @JsonProperty("current_station")
+    public void setCurrentStation(String currentStation) { this.currentStation = currentStation; }
+
+    @JsonProperty("direction")
+    public void setDirection(String direction) { this.direction = direction; }
+
+    @JsonProperty("arrival_time")
+    public void setArrivalTime(String arrivalTime) { this.arrivalTime = arrivalTime; }
+
+    private void setFieldsFromResultset(final ResultSet resultSet, final String... fieldNames)
+            throws NoSuchFieldException, SQLException, IllegalAccessException {
+        for(final String fieldName : fieldNames) {
+            final Field field = this.getClass().getDeclaredField(mapColumnToField(fieldName));
+            field.set(this, resultSet.getObject(fieldName));
+        }
     }
 
-    public int getTrack_element_id() {
-        return track_element_id;
+    private String mapColumnToField(String columnName) {
+        return columnName.replace("train_", "")
+                        .replace("schedule_", "")
+                        .replace("station_", "")
+                        .replace("datetime", "Time")
+                        .replace("_", "");
     }
 
-    public void setTrack_element_id(int track_element_id) {
-        this.track_element_id = track_element_id;
+    private final PreparedStatement buildPreparedStatement(PreparedStatement preparedStatement, final Object... values)
+            throws SQLException {
+        for(int i = 0; i < values.length; i++) {
+            preparedStatement.setObject(i + 1, values[i]);
+        }
+        return preparedStatement;
     }
 
-    public String getStation_name() {
-        return station_name;
+    @Override
+    public String toString() {
+        return "Train{" +
+                "trainId=" + trainId +
+                ", trainStatusId=" + trainStatusId +
+                ", trackElementId=" + trackElementId +
+                ", currentStation='" + currentStation + '\'' +
+                ", direction='" + direction + '\'' +
+                ", arrivalTime='" + arrivalTime + '\'' +
+                '}';
     }
-
-    public void setStation_name(String station_name) {
-        this.station_name = station_name;
-    }
-
-    public LocalDateTime getTime_in_station() {
-        return time_in_station;
-    }
-
-    public void setTime_in_station(LocalDateTime time_in_station) {
-        this.time_in_station = time_in_station;
-    }
-
 }
