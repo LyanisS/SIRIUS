@@ -1,4 +1,4 @@
-package edu.ezip.ing1.pds.business.server;
+/*package edu.ezip.ing1.pds.business.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -95,3 +95,4 @@ public class XMartCityService {
     }
 
 }
+*/

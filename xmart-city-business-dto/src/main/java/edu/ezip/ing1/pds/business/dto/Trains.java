@@ -1,17 +1,16 @@
 package edu.ezip.ing1.pds.business.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 public class Trains {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty("trains")
-    private Set<Train> trains = new LinkedHashSet<Train>();
+    @JsonValue  // This annotation tells Jackson to treat the trains field as the value itself
+    private Set<Train> trains = new LinkedHashSet<>();
 
     public Set<Train> getTrains() {
         return trains;
@@ -28,8 +27,8 @@ public class Trains {
 
     @Override
     public String toString() {
-        return "Trains{" +
-                "trains=" + trains +
-                '}';
+        return "Trains{"
+                + "trains=" + trains
+                + '}';
     }
 }

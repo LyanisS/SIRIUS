@@ -1,10 +1,11 @@
 package edu.ezip.ing1.pds.business.dto;
 
 import java.lang.reflect.Field;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -25,13 +26,27 @@ public class Schedule {
     private boolean scheduleStop;
 
     @JsonProperty("schedule_datetime")
-    private Date scheduleDatetime;
+    private LocalDateTime scheduleDatetime;
 
     public Schedule() {
     }
 
     public final Schedule build(final ResultSet resultSet)
             throws SQLException, NoSuchFieldException, IllegalAccessException {
+        this.scheduleId = resultSet.getInt("schedule_id");
+        this.tripId = resultSet.getInt("trip_id");
+        this.trackElementId = resultSet.getInt("track_element_id");
+        this.scheduleStop = resultSet.getBoolean("schedule_stop");
+
+// Convertir le Timestamp SQL en LocalDateTime
+        Timestamp timestamp = resultSet.getTimestamp("schedule_datetime");
+        this.scheduleDatetime = (timestamp != null) ? timestamp.toLocalDateTime() : null;
+
+        return this;
+    }
+
+    /*  public final Schedule build(final ResultSet resultSet)
+    throws SQLException, NoSuchFieldException, IllegalAccessException {
         setFieldsFromResultset(resultSet,
                 "schedule_id",
                 "trip_id",
@@ -40,20 +55,20 @@ public class Schedule {
                 "schedule_datetime"
         );
         return this;
-    }
-
+    }*/
     public final PreparedStatement build(PreparedStatement preparedStatement)
             throws SQLException, NoSuchFieldException, IllegalAccessException {
         return buildPreparedStatement(preparedStatement,
                 scheduleId,
                 tripId,
                 trackElementId,
-                scheduleDatetime,
+                // scheduleDatetime,
+                (scheduleDatetime != null) ? Timestamp.valueOf(scheduleDatetime) : null,
                 scheduleStop
         );
     }
 
-    public Schedule(int scheduleId, int tripId, int trackElementId, Date scheduleDatetime, boolean scheduleStop) {
+    public Schedule(int scheduleId, int tripId, int trackElementId, LocalDateTime scheduleDatetime, boolean scheduleStop) {
         this.scheduleId = scheduleId;
         this.tripId = tripId;
         this.trackElementId = trackElementId;
@@ -82,7 +97,7 @@ public class Schedule {
     }
 
     @JsonProperty("schedule_datetime")
-    public Date getScheduleDatetime() {
+    public LocalDateTime getScheduleDatetime() {
         return scheduleDatetime;
     }
 
@@ -107,7 +122,7 @@ public class Schedule {
     }
 
     @JsonProperty("schedule_datetime")
-    public void setScheduleDatetime(Date scheduleDatetime) {
+    public void setScheduleDatetime(LocalDateTime scheduleDatetime) {
         this.scheduleDatetime = scheduleDatetime;
     }
 
