@@ -28,7 +28,7 @@ public class TrainTableFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(600, 400);
 
-        String[] columnNames = {"ID Train", "Statut", "Position (ID CDV)"};
+        String[] columnNames = { "ID Train", "Statut", "Position (ID CDV)" };
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
 
@@ -62,17 +62,17 @@ public class TrainTableFrame extends JFrame {
             if (trains != null && trains.getTrains() != null) {
                 for (Train train : trains.getTrains()) {
                     Object[] row = {
-                        train.getId(),
-                        train.getStatus().getName(),
-                        train.getTrackElement().getId()
+                            train.getId(),
+                            train.getStatus().getName(),
+                            train.getTrackElement().getId()
                     };
                     tableModel.addRow(row);
                 }
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                    "Error loading train data: " + e.getMessage(),
-                    "Error",
+                    "Erreur dans le chargement des donnèes: " + e.getMessage(),
+                    "Erreur",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -85,8 +85,8 @@ public class TrainTableFrame extends JFrame {
             } catch (Exception e) {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this,
-                        "Error opening Schedule window: " + e.getMessage(),
-                        "Error",
+                        "Erreur dans l'affichage du tableau schedule: " + e.getMessage(),
+                        "Erreur",
                         JOptionPane.ERROR_MESSAGE);
             }
         });
@@ -100,7 +100,7 @@ public class TrainTableFrame extends JFrame {
             } catch (Exception e) {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(null,
-                        "Error starting application: " + e.getMessage(),
+                        "un problème dans le demarrage de l'application: " + e.getMessage(),
                         "Error",
                         JOptionPane.ERROR_MESSAGE);
             }
