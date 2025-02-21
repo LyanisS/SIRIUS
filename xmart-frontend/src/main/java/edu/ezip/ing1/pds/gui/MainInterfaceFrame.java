@@ -22,9 +22,9 @@ public class MainInterfaceFrame extends JFrame {
         this.defaultButtons = new ArrayList<>();
 
         JButton btnTrain = new JButton("Trains");
-        //btnTrain.addActionListener(e -> new TrainTableView(this));
+        btnTrain.addActionListener(e -> new TrainTableView(this));
         JButton btnSchedule = new JButton("Planning");
-        //btnSchedule.addActionListener(e -> new ScheduleTableView(this));
+        // btnSchedule.addActionListener(e -> new ScheduleTableView(this));
         JButton btnAlerts = new JButton("Alarmes");
         btnAlerts.addActionListener(e -> new AlertTableView(this));
 
@@ -39,7 +39,7 @@ public class MainInterfaceFrame extends JFrame {
 
         this.registerJButtons(null);
         this.setVisible(true);
-        btnAlerts.doClick();
+        btnTrain.doClick();
     }
 
     public NetworkConfig getNetworkConfig() {
@@ -52,9 +52,11 @@ public class MainInterfaceFrame extends JFrame {
 
     public void registerJButtons(List<JButton> buttons) {
         this.buttonsPanel.removeAll();
-        for (JButton btn : this.defaultButtons) this.buttonsPanel.add(btn);
+        for (JButton btn : this.defaultButtons)
+            this.buttonsPanel.add(btn);
         if (buttons != null) {
-            for (JButton btn : buttons) this.buttonsPanel.add(btn);
+            for (JButton btn : buttons)
+                this.buttonsPanel.add(btn);
         }
         this.buttonsPanel.repaint();
     }

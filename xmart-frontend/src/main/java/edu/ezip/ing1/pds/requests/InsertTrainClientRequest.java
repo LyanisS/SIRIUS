@@ -23,5 +23,5 @@ public class InsertTrainClientRequest extends ClientRequest<Train, Train> {
         final ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return mapper.readValue(body, Train.class);
-    }
+    }   
 } 
