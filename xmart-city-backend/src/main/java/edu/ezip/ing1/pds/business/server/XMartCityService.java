@@ -21,7 +21,9 @@ public class XMartCityService {
         SELECT_ALL_TRAINS("SELECT train_id, train_status_id, track_element_id, track_element_is_working, switch_position_id, track_element_type_id, track_id, station_id, station_name FROM train JOIN track_element USING (track_element_id) JOIN station USING (station_id);"),
         INSERT_TRAIN("INSERT INTO trains (train_id, train_status_id, track_element_id) VALUES (?, ?, ?);"),
         SELECT_ALL_SCHEDULES("SELECT schedule_id, schedule_timestamp, schedule_stop, schedule.track_element_id, track_element_is_working, switch_position_id, track_element_type_id, track_id, station_id, station_name, trip_id, train_id, train_status_id, person_id, person_first_name, person_last_name, person_login FROM schedule JOIN track_element ON schedule.track_element_id=track_element.track_element_id JOIN station USING (station_id) JOIN trip USING (trip_id) JOIN train USING (train_id) JOIN person USING (person_id);"),
-        INSERT_SCHEDULE("INSERT INTO schedule (schedule_timestamp, schedule_stop, track_element_id, trip_id) VALUES (?, ?, ?, ?);");
+        INSERT_SCHEDULE("INSERT INTO schedule (schedule_timestamp, schedule_stop, track_element_id, trip_id) VALUES (?, ?, ?, ?);"),
+        SELECT_ALL_ALERTS("SELECT alert_id, alert_message, alert_timestamp, alert_gravity_id, train_id, train_status_id FROM alert JOIN train USING (train_id);"),
+        INSERT_ALERT("INSERT INTO alert (alert_message, alert_timestamp, alert_gravity_id, train_id) VALUES (?, ?, ?, ?);");
 
         private final String query;
 
@@ -57,6 +59,12 @@ public class XMartCityService {
                 break;
             case INSERT_SCHEDULE:
                 response = InsertSchedule(request, connection);
+                break;
+            case SELECT_ALL_ALERTS:
+                response = SelectAllAlerts(request, connection);
+                break;
+            case INSERT_ALERT:
+                response = InsertAlert(request, connection);
                 break;
             default:
                 break;
@@ -164,4 +172,37 @@ public class XMartCityService {
         return new Response(request.getRequestId(), objectMapper.writeValueAsString(schedules));
     }
 
+    private Response InsertAlert(final Request request, final Connection connection) throws SQLException, IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final Alert alert = objectMapper.readValue(request.getRequestBody(), Alert.class);
+        final PreparedStatement stmt = connection.prepareStatement(Queries.INSERT_ALERT.query);
+        stmt.setString(1, alert.getMessage());
+        stmt.setTimestamp(2, alert.getTimestamp());
+        stmt.setInt(3, alert.getGravity().getId());
+        stmt.setInt(4, alert.getTrain().getId());
+        stmt.executeUpdate();
+        ResultSet res = stmt.getGeneratedKeys();
+        if (res.next()) alert.setId(res.getInt(1));
+
+        return new Response(request.getRequestId(), objectMapper.writeValueAsString(alert));
+    }
+
+    private Response SelectAllAlerts(final Request request, final Connection connection) throws SQLException, JsonProcessingException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final Statement stmt = connection.createStatement();
+        final ResultSet res = stmt.executeQuery(Queries.SELECT_ALL_ALERTS.query);
+        Alerts alerts = new Alerts();
+        while (res.next()) {
+            alerts.add(
+                new Alert(
+                    res.getInt("alert_id"),
+                    res.getString("alert_message"),
+                    res.getTimestamp("alert_timestamp"),
+                    AlertGravity.getById(res.getInt("alert_gravity_id")),
+                    new Train(res.getInt("train_id"), TrainStatus.getById(res.getInt("train_status_id")), null)
+                )
+            );
+        }
+        return new Response(request.getRequestId(), objectMapper.writeValueAsString(alerts));
+    }
 }
