@@ -1,162 +1,94 @@
 package edu.ezip.ing1.pds.business.dto;
 
-import java.lang.reflect.Field;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
 @JsonRootName(value = "schedule")
 public class Schedule {
+    @JsonProperty("id")
+    private int id;
 
-    @JsonProperty("schedule_id")
-    private int scheduleId;
+    @JsonProperty("stop")
+    private boolean stop;
 
-    @JsonProperty("trip_id")
-    private int tripId;
+    @JsonProperty("timestamp")
+    private Timestamp timestamp;
 
-    @JsonProperty("track_element_id")
-    private int trackElementId;
+    @JsonProperty("track_element")
+    private TrackElement trackElement;
 
-    @JsonProperty("schedule_stop")
-    private boolean scheduleStop;
+    @JsonProperty("trip")
+    private Trip trip;
 
-    @JsonProperty("schedule_datetime")
-    private LocalDateTime scheduleDatetime;
+    public Schedule() {}
 
-    public Schedule() {
+    public Schedule(int id, Timestamp timestamp, boolean stop, TrackElement trackElement, Trip trip) {
+        this.id = id;
+        this.timestamp = timestamp;
+        this.stop = stop;
+        this.trackElement = trackElement;
+        this.trip = trip;
     }
 
-    public final Schedule build(final ResultSet resultSet)
-            throws SQLException, NoSuchFieldException, IllegalAccessException {
-        this.scheduleId = resultSet.getInt("schedule_id");
-        this.tripId = resultSet.getInt("trip_id");
-        this.trackElementId = resultSet.getInt("track_element_id");
-        this.scheduleStop = resultSet.getBoolean("schedule_stop");
-
-// Convertir le Timestamp SQL en LocalDateTime
-        Timestamp timestamp = resultSet.getTimestamp("schedule_datetime");
-        this.scheduleDatetime = (timestamp != null) ? timestamp.toLocalDateTime() : null;
-
-        return this;
+    public int getId() {
+        return this.id;
     }
 
-    /*  public final Schedule build(final ResultSet resultSet)
-    throws SQLException, NoSuchFieldException, IllegalAccessException {
-        setFieldsFromResultset(resultSet,
-                "schedule_id",
-                "trip_id",
-                "track_element_id",
-                "schedule_stop",
-                "schedule_datetime"
-        );
-        return this;
-    }*/
-    public final PreparedStatement build(PreparedStatement preparedStatement)
-            throws SQLException, NoSuchFieldException, IllegalAccessException {
-        return buildPreparedStatement(preparedStatement,
-                scheduleId,
-                tripId,
-                trackElementId,
-                // scheduleDatetime,
-                (scheduleDatetime != null) ? Timestamp.valueOf(scheduleDatetime) : null,
-                scheduleStop
-        );
+    public Trip getTrip() {
+        return this.trip;
     }
 
-    public Schedule(int scheduleId, int tripId, int trackElementId, LocalDateTime scheduleDatetime, boolean scheduleStop) {
-        this.scheduleId = scheduleId;
-        this.tripId = tripId;
-        this.trackElementId = trackElementId;
-        this.scheduleDatetime = scheduleDatetime;
-        this.scheduleStop = scheduleStop;
+    public TrackElement getTrackElement() {
+        return this.trackElement;
     }
 
-    @JsonProperty("schedule_id")
-    public int getScheduleId() {
-        return scheduleId;
+    public boolean getStop() {
+        return this.stop;
     }
 
-    @JsonProperty("trip_id")
-    public int getTripId() {
-        return tripId;
+    public Timestamp getTimestamp() {
+        return this.timestamp;
     }
 
-    @JsonProperty("track_element_id")
-    public int getTrackElementId() {
-        return trackElementId;
+    public void setId(int id) {
+        this.id = id;
     }
 
-    @JsonProperty("schedule_stop")
-    public boolean getScheduleStop() {
-        return scheduleStop;
+    public void setTrip(Trip trip) {
+        this.trip = trip;
     }
 
-    @JsonProperty("schedule_datetime")
-    public LocalDateTime getScheduleDatetime() {
-        return scheduleDatetime;
+    public void setTrackElement(TrackElement trackElement) {
+        this.trackElement = trackElement;
     }
 
-    @JsonProperty("schedule_id")
-    public void setScheduleId(int scheduleId) {
-        this.scheduleId = scheduleId;
+    public void setStop(boolean stop) {
+        this.stop = stop;
     }
 
-    @JsonProperty("trip_id")
-    public void setTripId(int tripId) {
-        this.tripId = tripId;
-    }
-
-    @JsonProperty("track_element_id")
-    public void setTrackElementId(int trackElementId) {
-        this.trackElementId = trackElementId;
-    }
-
-    @JsonProperty("schedule_stop")
-    public void setScheduleStop(boolean scheduleStop) {
-        this.scheduleStop = scheduleStop;
-    }
-
-    @JsonProperty("schedule_datetime")
-    public void setScheduleDatetime(LocalDateTime scheduleDatetime) {
-        this.scheduleDatetime = scheduleDatetime;
-    }
-
-    private void setFieldsFromResultset(final ResultSet resultSet, final String... fieldNames)
-            throws NoSuchFieldException, SQLException, IllegalAccessException {
-        for (final String fieldName : fieldNames) {
-            final Field field = this.getClass().getDeclaredField(mapColumnToField(fieldName));
-            field.set(this, resultSet.getObject(fieldName));
-        }
-    }
-
-    private String mapColumnToField(String columnName) {
-        return columnName.replace("schedule_", "")
-                .replace("trip_", "")
-                .replace("track_element_", "")
-                .replace("_", "");
-    }
-
-    private final PreparedStatement buildPreparedStatement(PreparedStatement preparedStatement, final Object... values)
-            throws SQLException {
-        for (int i = 0; i < values.length; i++) {
-            preparedStatement.setObject(i + 1, values[i]);
-        }
-        return preparedStatement;
+    public void setTimestamp(Timestamp timestamp) {
+        this.timestamp = timestamp;
     }
 
     @Override
     public String toString() {
-        return "Schedule{"
-                + "scheduleId=" + scheduleId
-                + ", tripId=" + tripId
-                + ", trackElementId=" + trackElementId
-                + ", scheduleDatetime=" + scheduleDatetime
-                + ", scheduleStop=" + scheduleStop
-                + '}';
+        return "Schedule{" +
+                "id=" + this.id +
+                ", trip=" + this.trip +
+                ", trackElement=" + this.trackElement +
+                ", timestamp=" + this.timestamp +
+                ", stop=" + this.stop +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || this.getClass() != o.getClass()) return false;
+
+        Schedule s = (Schedule) o;
+        return this.id == s.id;
     }
 }
