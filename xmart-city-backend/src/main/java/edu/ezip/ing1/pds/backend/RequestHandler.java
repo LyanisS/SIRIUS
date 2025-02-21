@@ -3,6 +3,7 @@ package edu.ezip.ing1.pds.backend;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -10,6 +11,7 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
+import edu.ezip.ing1.pds.business.server.XMartCityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -19,7 +21,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import edu.ezip.commons.LoggingUtils;
-import edu.ezip.ing1.pds.business.server.TrainService;
 import edu.ezip.ing1.pds.commons.Request;
 import edu.ezip.ing1.pds.commons.Response;
 
@@ -36,8 +37,7 @@ public class RequestHandler implements Runnable {
     private final Logger logger = LoggerFactory.getLogger(LoggingLabel);
     private int requestCount = 0;
 
-    //private final XMartCityService xmartCityService = XMartCityService.getInstance();
-    private final TrainService xmartCityService = TrainService.getInstance();
+    private final XMartCityService xmartCityService = XMartCityService.getInstance();
 
     private final CoreBackendServer father;
 
@@ -84,11 +84,11 @@ public class RequestHandler implements Runnable {
 
         } catch (IOException e) {
             e.printStackTrace();
-        }/*  catch (IllegalAccessException e) {
+        }  catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
             e.printStackTrace();
-        }*/ catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (SQLException e) {
             e.printStackTrace();
