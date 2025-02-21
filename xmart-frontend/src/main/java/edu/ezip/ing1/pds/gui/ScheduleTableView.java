@@ -87,10 +87,10 @@ public class ScheduleTableView {
     }
 
     private void openAddScheduleDialog() {
-        String scheduleDatetime = JOptionPane.showInputDialog(this, "Date/heure (yyyy-MM-dd hh:mm:ss) :");
-        String scheduleStop = JOptionPane.showInputDialog(this, "Arrêt ? (Oui/Non):");
-        String trackElementId = JOptionPane.showInputDialog(this, "ID CDV :");
-        String tripId = JOptionPane.showInputDialog(this, "ID Trajet:");
+        String scheduleDatetime = JOptionPane.showInputDialog(this.frame, "Date/heure (yyyy-MM-dd hh:mm:ss) :");
+        String scheduleStop = JOptionPane.showInputDialog(this.frame, "Arrêt ? (Oui/Non):");
+        String trackElementId = JOptionPane.showInputDialog(this.frame, "ID CDV :");
+        String tripId = JOptionPane.showInputDialog(this.frame, "ID Trajet:");
 
         if (tripId != null && trackElementId != null && scheduleDatetime != null && scheduleStop != null) {
             try {
@@ -103,7 +103,7 @@ public class ScheduleTableView {
 
                 refreshScheduleData();
 
-                JOptionPane.showMessageDialog(this.frame, "Horaire ajouté avec succès!", "Succès", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this.frame, "L'horaire a été bien ajoutée!", "Bien ajoutée", JOptionPane.INFORMATION_MESSAGE);
 
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this.frame, "Erreur lors de l'ajout de l'horaire : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
