@@ -1,14 +1,18 @@
 package edu.ezip.ing1.pds.gui;
 
-import edu.ezip.ing1.pds.client.commons.ConfigLoader;
-import edu.ezip.ing1.pds.client.commons.NetworkConfig;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+import edu.ezip.ing1.pds.client.commons.ConfigLoader;
+import edu.ezip.ing1.pds.client.commons.NetworkConfig;
+
 public class MainInterfaceFrame extends JFrame {
+
     private List<JButton> defaultButtons;
     private JPanel buttonsPanel;
     private JPanel mainPanel;
@@ -24,7 +28,7 @@ public class MainInterfaceFrame extends JFrame {
         JButton btnTrain = new JButton("Trains");
         btnTrain.addActionListener(e -> new TrainTableView(this));
         JButton btnSchedule = new JButton("Planning");
-        // btnSchedule.addActionListener(e -> new ScheduleTableView(this));
+        btnSchedule.addActionListener(e -> new ScheduleTableView(this));
         JButton btnAlerts = new JButton("Alarmes");
         btnAlerts.addActionListener(e -> new AlertTableView(this));
 
@@ -52,11 +56,13 @@ public class MainInterfaceFrame extends JFrame {
 
     public void registerJButtons(List<JButton> buttons) {
         this.buttonsPanel.removeAll();
-        for (JButton btn : this.defaultButtons)
+        for (JButton btn : this.defaultButtons) {
             this.buttonsPanel.add(btn);
+        }
         if (buttons != null) {
-            for (JButton btn : buttons)
+            for (JButton btn : buttons) {
                 this.buttonsPanel.add(btn);
+            }
         }
         this.buttonsPanel.repaint();
     }

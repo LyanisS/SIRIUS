@@ -1,35 +1,32 @@
 package edu.ezip.ing1.pds.gui;
 
-import java.awt.BorderLayout;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
 import edu.ezip.ing1.pds.business.dto.Schedule;
 import edu.ezip.ing1.pds.business.dto.Schedules;
 import edu.ezip.ing1.pds.business.dto.TrackElement;
 import edu.ezip.ing1.pds.business.dto.Trip;
-import edu.ezip.ing1.pds.client.commons.ConfigLoader;
-import edu.ezip.ing1.pds.client.commons.NetworkConfig;
 import edu.ezip.ing1.pds.services.ScheduleService;
 
-public class ScheduleTableFrame extends JFrame {
+public class ScheduleTableView {
 
+    private MainInterfaceFrame frame;
     private final JTable table;
     private final DefaultTableModel tableModel;
-    private final ScheduleService scheduleService;
+    private final ScheduleService service;
 
-    public ScheduleTableFrame() throws Exception {
-        super("Gestion du planning - PCC");
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(800, 400);
+    public ScheduleTableView(MainInterfaceFrame frame) {
+        this.frame = frame;
+        this.frame.setTitle("Gestion du planning");
+        this.frame.getMainJPanel().removeAll();
 
         String[] columnNames = {
             "ID Horaire",
@@ -42,36 +39,30 @@ public class ScheduleTableFrame extends JFrame {
         table = new JTable(tableModel);
 
         JScrollPane scrollPane = new JScrollPane(table);
-        add(scrollPane, BorderLayout.CENTER);
+        this.frame.getMainJPanel().add(scrollPane);
 
-        JPanel buttonPanel = new JPanel();
+        List<JButton> buttons = new ArrayList<>();
+
         JButton refreshButton = new JButton("Actualiser");
         refreshButton.addActionListener(e -> refreshScheduleData());
-        buttonPanel.add(refreshButton);
+        buttons.add(refreshButton);
 
         JButton addScheduleButton = new JButton("Ajouter un horaire");
         addScheduleButton.addActionListener(e -> openAddScheduleDialog());
-        buttonPanel.add(addScheduleButton);
+        buttons.add(addScheduleButton);
 
-        JButton backButton = new JButton("Retour");
-        backButton.addActionListener(e -> {
-            dispose();
-        });
-        buttonPanel.add(backButton);
+        this.frame.registerJButtons(buttons);
 
-        add(buttonPanel, BorderLayout.SOUTH);
+        this.service = new ScheduleService(this.frame.getNetworkConfig());
 
-        NetworkConfig networkConfig = ConfigLoader.loadConfig(NetworkConfig.class, "network.yaml");
-        scheduleService = new ScheduleService(networkConfig);
-
-        refreshScheduleData();
+        this.refreshScheduleData();
     }
 
     private void refreshScheduleData() {
         try {
             tableModel.setRowCount(0);
 
-            Schedules schedules = scheduleService.selectSchedules();
+            Schedules schedules = this.service.selectSchedules();
 
             if (schedules != null && schedules.getSchedules() != null) {
                 for (Schedule schedule : schedules.getSchedules()) {
@@ -85,8 +76,10 @@ public class ScheduleTableFrame extends JFrame {
                     tableModel.addRow(row);
                 }
             }
+            this.frame.repaint();
+            this.frame.revalidate();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
+            JOptionPane.showMessageDialog(this.frame,
                     "Erreur lors de la récupération des données du planning : " + e.getMessage(),
                     "Erreur",
                     JOptionPane.ERROR_MESSAGE);
@@ -95,7 +88,7 @@ public class ScheduleTableFrame extends JFrame {
 
     private void openAddScheduleDialog() {
         String scheduleDatetime = JOptionPane.showInputDialog(this, "Date/heure (yyyy-MM-dd hh:mm:ss) :");
-        String scheduleStop = JOptionPane.showInputDialog(this, "Arrêt ? (true/false):");
+        String scheduleStop = JOptionPane.showInputDialog(this, "Arrêt ? (Oui/Non):");
         String trackElementId = JOptionPane.showInputDialog(this, "ID CDV :");
         String tripId = JOptionPane.showInputDialog(this, "ID Trajet:");
 
@@ -110,28 +103,13 @@ public class ScheduleTableFrame extends JFrame {
 
                 refreshScheduleData();
 
-                JOptionPane.showMessageDialog(this, "Horaire ajouté avec succès!", "Succès", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this.frame, "Horaire ajouté avec succès!", "Succès", JOptionPane.INFORMATION_MESSAGE);
 
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Erreur lors de l'ajout de l'horaire : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this.frame, "Erreur lors de l'ajout de l'horaire : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
             }
         } else {
-            JOptionPane.showMessageDialog(this, "Veuillez remplir tous les champs.", "Erreur", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this.frame, "Veuillez remplir tous les champs.", "Erreur", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                ScheduleTableFrame frame = new ScheduleTableFrame();
-                frame.setVisible(true);
-            } catch (Exception e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(null,
-                        "Erreur lors du lancement de l'application : " + e.getMessage(),
-                        "Erreur",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-        });
     }
 }
