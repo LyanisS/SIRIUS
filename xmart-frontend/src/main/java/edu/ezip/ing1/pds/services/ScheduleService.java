@@ -63,7 +63,7 @@ public class ScheduleService {
             final Schedule schedule = (Schedule) clientRequest.getInfo();
             logger.debug("Thread {} complete: {} --> {}",
                     clientRequest.getThreadName(),
-                    schedule.getScheduleId(),
+                    schedule.getId(),
                     clientRequest.getResult());
         }
     }

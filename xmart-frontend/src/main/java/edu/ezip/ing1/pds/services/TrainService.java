@@ -63,39 +63,38 @@ public class TrainService {
             final ClientRequest clientRequest = clientRequests.pop();
             clientRequest.join();
             final Train train = (Train) clientRequest.getInfo();
-            logger.debug("Thread {} complete : {} {} --> {}",
+            logger.debug("Thread {} complete : {} {} {} --> {}",
                     clientRequest.getThreadName(),
-                    train.getTrainId(), train.getTrainStatusId(), train.getTrackElementId(),
+                    train.getId(), train.getStatus(), train.getTrackElement(),
                     clientRequest.getResult());
         }
     }
 
     public Trains selectTrains() throws InterruptedException, IOException {
+        int birthdate = 0;
+        final Deque<ClientRequest> clientRequests = new ArrayDeque<ClientRequest>();
+        final ObjectMapper objectMapper = new ObjectMapper();
         final String requestId = UUID.randomUUID().toString();
         final Request request = new Request();
         request.setRequestId(requestId);
         request.setRequestOrder(selectRequestOrder);
-
-        final ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
-        final byte[] requestBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(request);
+        final byte []  requestBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(request);
         LoggingUtils.logDataMultiLine(logger, Level.TRACE, requestBytes);
-
         final SelectAllTrainsClientRequest clientRequest = new SelectAllTrainsClientRequest(
                 networkConfig,
-                0, // Since trainId isn't used in the select operation
-                request,
-                null,
-                requestBytes);
+                birthdate++, request, null, requestBytes);
+        clientRequests.push(clientRequest);
 
-        //clientRequest.start(); // Make sure the request is started
-        clientRequest.join();  // Wait for completion
-
-        if (clientRequest.getResult() != null) {
-            return (Trains) clientRequest.getResult();
+        if (!clientRequests.isEmpty()) {
+            final ClientRequest joinedClientRequest = clientRequests.pop();
+            joinedClientRequest.join();
+            logger.debug("Thread {} complete.", joinedClientRequest.getThreadName());
+            return (Trains) joinedClientRequest.getResult();
         }
-
-        logger.error("No trains found");
-        return null;
+        else {
+            logger.error("No trains found");
+            return null;
+        }
     }
 }
