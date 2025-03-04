@@ -25,7 +25,7 @@ public class ScheduleTableView {
 
     public ScheduleTableView(MainInterfaceFrame frame) {
         this.frame = frame;
-        this.frame.setTitle("Gestion du planning");
+        this.frame.setTitle("Gestion du planning des trains");
         this.frame.getMainJPanel().removeAll();
 
         String[] columnNames = {
@@ -101,15 +101,23 @@ public class ScheduleTableView {
                 newSchedule.setTrackElement(new TrackElement(Integer.parseInt(trackElementId)));
                 newSchedule.setTrip(new Trip(Integer.parseInt(tripId)));
 
+                Schedules schedules = new Schedules();
+                schedules.add(newSchedule);
+
+                this.service.insertSchedules(schedules);
+
                 refreshScheduleData();
 
-                JOptionPane.showMessageDialog(this.frame, "L'horaire a été bien ajoutée!", "Bien ajoutée", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this.frame, "L'horaire a été bien ajoutée!", "Bien ajoutée",
+                        JOptionPane.INFORMATION_MESSAGE);
 
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this.frame, "Erreur lors de l'ajout de l'horaire : " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this.frame, "Erreur lors de l'ajout de l'horaire : " + ex.getMessage(),
+                        "Erreur", JOptionPane.ERROR_MESSAGE);
             }
         } else {
-            JOptionPane.showMessageDialog(this.frame, "Veuillez remplir tous les champs.", "Erreur", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this.frame, "Il faut remplir tous les champs.", "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 }
