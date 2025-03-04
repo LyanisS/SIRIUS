@@ -16,9 +16,9 @@ import edu.ezip.commons.LoggingUtils;
 import edu.ezip.ing1.pds.business.dto.Schedule;
 import edu.ezip.ing1.pds.business.dto.Schedules;
 import edu.ezip.ing1.pds.client.commons.ClientRequest;
-import edu.ezip.ing1.pds.client.commons.ConfigLoader;
 import edu.ezip.ing1.pds.client.commons.NetworkConfig;
 import edu.ezip.ing1.pds.commons.Request;
+import edu.ezip.ing1.pds.requests.InsertScheduleClientRequest;
 import edu.ezip.ing1.pds.requests.SelectAllSchedulesClientRequest;
 
 public class ScheduleService {
@@ -36,9 +36,8 @@ public class ScheduleService {
         this.networkConfig = networkConfig;
     }
 
-    public void insertSchedules() throws InterruptedException, IOException {
+    public void insertSchedules(Schedules schedules) throws InterruptedException, IOException {
         final Deque<ClientRequest> clientRequests = new ArrayDeque<ClientRequest>();
-        final Schedules schedules = ConfigLoader.loadConfig(Schedules.class, schedulesToBeInserted);
 
         int birthdate = 0;
         for (final Schedule schedule : schedules.getSchedules()) {
@@ -53,8 +52,8 @@ public class ScheduleService {
             objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
             final byte[] requestBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(request);
 
-            //  final InsertSchedulesClientRequest clientRequest = new InsertSchedulesClientRequest(networkConfig,trainId++, request, schedule, requestBytes);
-            // clientRequests.push(clientRequest);
+            final InsertScheduleClientRequest clientRequest = new InsertScheduleClientRequest(networkConfig, birthdate++, request, schedule, requestBytes);
+            clientRequests.push(clientRequest);
         }
 
         while (!clientRequests.isEmpty()) {
