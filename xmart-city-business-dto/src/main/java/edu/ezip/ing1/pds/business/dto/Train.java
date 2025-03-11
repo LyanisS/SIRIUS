@@ -14,6 +14,9 @@ public class Train {
     @JsonProperty("track_element")
     private TrackElement trackElement;
 
+    @JsonProperty("station_name")
+    private Station station;
+
     public Train() {}
 
     public Train(int id, TrainStatus status, TrackElement trackElement) {

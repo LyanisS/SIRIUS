@@ -24,7 +24,12 @@ public class TrainTableView {
         this.frame.setTitle("Gestion des trains");
         this.frame.getMainJPanel().removeAll();
 
-        String[] columnNames = { "ID Train", "Statut", "Position (ID CDV)" };
+        String[] columnNames = {
+            "ID Train",
+            "Statut",
+            "Position (ID CDV)",
+            "Station"
+        };
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
 
@@ -64,7 +69,7 @@ public class TrainTableView {
             this.frame.revalidate();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this.frame,
-                    "Erreur dans le chargement des donnèes: " + e.getMessage(),
+                    "Erreur dans le chargement des donnèes du train: " + e.getMessage(),
                     "Erreur",
                     JOptionPane.ERROR_MESSAGE);
         }
