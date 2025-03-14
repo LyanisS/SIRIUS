@@ -36,7 +36,8 @@ public class XMartCityService {
         SELECT_ALL_ALERTS(
                 "SELECT alert_id, alert_message, alert_timestamp, alert_gravity_id, train_id, train_status_id FROM alert JOIN train USING (train_id);"),
         INSERT_ALERT(
-                "INSERT INTO alert (alert_message, alert_timestamp, alert_gravity_id, train_id) VALUES (?, ?, ?, ?);");
+                "INSERT INTO alert (alert_message, alert_timestamp, alert_gravity_id, train_id) VALUES (?, ?, ?, ?);"),
+        DELETE_ALERT("DELETE FROM alert WHERE alert_id = ?");
 
         private final String query;
 
@@ -86,6 +87,9 @@ public class XMartCityService {
                 break;
             case INSERT_ALERT:
                 response = InsertAlert(request, connection);
+                break;
+            case DELETE_ALERT:
+                response = DeleteAlert(request, connection);
                 break;
             default:
                 break;
@@ -286,6 +290,16 @@ public class XMartCityService {
         ResultSet res = stmt.getGeneratedKeys();
         if (res.next())
             alert.setId(res.getInt(1));
+
+        return new Response(request.getRequestId(), objectMapper.writeValueAsString(alert));
+    }
+
+    private Response DeleteAlert(final Request request, final Connection connection) throws SQLException, IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final Alert alert = objectMapper.readValue(request.getRequestBody(), Alert.class);
+        final PreparedStatement stmt = connection.prepareStatement(Queries.DELETE_ALERT.query);
+        stmt.setInt(1, alert.getId());
+        stmt.executeUpdate();
 
         return new Response(request.getRequestId(), objectMapper.writeValueAsString(alert));
     }
