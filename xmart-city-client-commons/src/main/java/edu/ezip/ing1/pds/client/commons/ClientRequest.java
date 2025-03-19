@@ -33,14 +33,15 @@ public abstract class ClientRequest<N,S> implements Runnable {
     private final BlockingDeque<Integer> waitArtifact = new LinkedBlockingDeque<Integer>(1);
     private final Request request;
     private final N info;
-    private  S result;
-
-
+    private S result;
+    private Exception exception;
+    
+    
     public ClientRequest(final NetworkConfig networkConfig,
-                         final int myBirthDate,
-                         final Request request,
-                         final N info,
-                         final byte [] bytes) throws IOException {
+                        final int myBirthDate,
+                        final Request request,
+                        final N info,
+                        final byte [] bytes) throws IOException {
         this.networkConfig = networkConfig;
         final StringBuffer threadNameBuffer = new StringBuffer();
         threadNameBuffer.append(threadNamePrfx).append("★").append(String.format("%04d",myBirthDate));
@@ -82,8 +83,10 @@ public abstract class ClientRequest<N,S> implements Runnable {
 
         } catch (IOException e) {
             logger.error("Connection fails, exception tells {} — {}", e.getMessage(), e.getClass());
+            this.exception = e;
         } catch (InterruptedException e) {
             e.printStackTrace();
+            this.exception = e;
         }
     }
 
@@ -102,4 +105,8 @@ public abstract class ClientRequest<N,S> implements Runnable {
     public final S getResult() {
         return result;
     }
+    public Exception getException() {
+        return exception;
+    }
+
 }
