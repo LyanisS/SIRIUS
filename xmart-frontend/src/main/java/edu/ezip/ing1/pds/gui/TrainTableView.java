@@ -25,10 +25,10 @@ public class TrainTableView {
         this.frame.getMainJPanel().removeAll();
 
         String[] columnNames = {
-            "ID Train",
-            "Statut",
-            "Position (ID CDV)",
-            "Station"
+                "ID Train",
+                "Statut",
+                "Position (ID CDV)",
+                "Station"
         };
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
@@ -60,7 +60,10 @@ public class TrainTableView {
                     Object[] row = {
                             train.getId(),
                             train.getStatus().getName(),
-                            train.getTrackElement().getId()
+                            train.getTrackElement().getId(),
+                            train.getTrackElement().getStation() != null
+                                    ? train.getTrackElement().getStation().getName()
+                                    : ""
                     };
                     tableModel.addRow(row);
                 }
