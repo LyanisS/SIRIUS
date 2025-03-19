@@ -434,7 +434,7 @@ public class TrainTableView {
 
         styleDialogUIComponents();
 
-        AddTrainDialog dialog = new AddTrainDialog(this.frame, this.service);
+        AddTrainStyle dialog = new AddTrainStyle(this.frame, this.service);
 
         if (dialog.showDialog()) {
             dialog.addTrain();
