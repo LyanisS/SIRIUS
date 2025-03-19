@@ -19,8 +19,10 @@ import edu.ezip.ing1.pds.client.commons.ClientRequest;
 import edu.ezip.ing1.pds.client.commons.ConfigLoader;
 import edu.ezip.ing1.pds.client.commons.NetworkConfig;
 import edu.ezip.ing1.pds.commons.Request;
+import edu.ezip.ing1.pds.requests.DeleteTrainClientRequest;
 import edu.ezip.ing1.pds.requests.InsertTrainClientRequest;
 import edu.ezip.ing1.pds.requests.SelectAllTrainsClientRequest;
+import edu.ezip.ing1.pds.requests.UpdateTrainClientRequest;
 
 public class TrainService {
 
@@ -37,9 +39,8 @@ public class TrainService {
         this.networkConfig = networkConfig;
     }
 
-    public void insertTrains() throws InterruptedException, IOException {
+    public void insertTrains(Trains trains) throws InterruptedException, IOException {
         final Deque<ClientRequest> clientRequests = new ArrayDeque<>();
-        final Trains trains = ConfigLoader.loadConfig(Trains.class, trainsToBeInserted);
 
         int trainId = 0;
         for (final Train train : trains.getTrains()) {
@@ -59,14 +60,31 @@ public class TrainService {
             clientRequests.push(clientRequest);
         }
 
+        Exception lastException = null;
         while (!clientRequests.isEmpty()) {
             final ClientRequest clientRequest = clientRequests.pop();
             clientRequest.join();
             final Train train = (Train) clientRequest.getInfo();
-            logger.debug("Thread {} complete : {} {} {} --> {}",
-                    clientRequest.getThreadName(),
-                    train.getId(), train.getStatus(), train.getTrackElement(),
-                    clientRequest.getResult());
+                    if (clientRequest.getException() != null) {
+                lastException = clientRequest.getException();
+                logger.error("Error in thread {}: {}", 
+                    clientRequest.getThreadName(), 
+                    lastException.getMessage());
+            } else {
+                logger.debug("Thread {} complete : {} {} {} --> {}",
+                        clientRequest.getThreadName(),
+                        train.getId(), train.getStatus(), train.getTrackElement(),
+                        clientRequest.getResult());
+            }
+        }
+        
+    
+        if (lastException != null) {
+            if (lastException instanceof IOException) {
+                throw (IOException) lastException;
+            } else {
+                throw new IOException("Error inserting train: " + lastException.getMessage(), lastException);
+            }
         }
     }
 
@@ -85,16 +103,100 @@ public class TrainService {
                 networkConfig,
                 birthdate++, request, null, requestBytes);
         clientRequests.push(clientRequest);
+        System.out.println("111111111111111111111111111111111111111111111");
 
         if (!clientRequests.isEmpty()) {
             final ClientRequest joinedClientRequest = clientRequests.pop();
             joinedClientRequest.join();
             logger.debug("Thread {} complete.", joinedClientRequest.getThreadName());
+
+            System.out.println("00000000000000000000000000000");
+
             return (Trains) joinedClientRequest.getResult();
-        }
-        else {
+        } else {
             logger.error("No trains found");
             return null;
         }
     }
+
+    public boolean isTrackElementInUse(int trackElementId) throws InterruptedException, IOException {
+        Trains trains = selectTrains();
+        
+        if (trains != null && trains.getTrains() != null) {
+            for (Train train : trains.getTrains()) {
+                if (train.getTrackElement() != null && 
+                    train.getTrackElement().getId() == trackElementId) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    public void deleteTrain(int trainId) throws InterruptedException, IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final String requestId = UUID.randomUUID().toString();
+        final Request request = new Request();
+        request.setRequestId(requestId);
+        request.setRequestOrder("DELETE_TRAIN");
+        
+    
+        String jsonContent = "{\"id\":" + trainId + "}";
+        request.setRequestContent(jsonContent);
+        
+        objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
+        final byte[] requestBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(request);
+        
+        
+        final DeleteTrainClientRequest clientRequest = new DeleteTrainClientRequest(
+                networkConfig, 0, request, trainId, requestBytes);
+        
+        clientRequest.join();
+        
+        if (clientRequest.getException() != null) {
+            throw new IOException("Error deleting train: " + clientRequest.getException().getMessage(), 
+                                clientRequest.getException());
+        }
+        
+    
+        String result = (String) clientRequest.getResult();
+        logger.debug("Delete train result: {}", result);
+    }
+    
+    public void updateTrainStatus(int trainId, int statusId) throws InterruptedException, IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final String requestId = UUID.randomUUID().toString();
+        final Request request = new Request();
+        request.setRequestId(requestId);
+        request.setRequestOrder("UPDATE_TRAIN_STATUS");
+        
+    
+        String jsonContent = "{\"id\":" + trainId + ", \"statusId\":" + statusId + "}";
+        request.setRequestContent(jsonContent);
+        
+        objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
+        final byte[] requestBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(request);
+        
+    
+        Train dummyTrain = new Train();
+        dummyTrain.setId(trainId);
+        
+        
+        final UpdateTrainClientRequest clientRequest = new UpdateTrainClientRequest(
+                networkConfig, 0, request, dummyTrain, requestBytes);
+        
+        clientRequest.join();
+        
+    
+        if (clientRequest.getException() != null) {
+            throw new IOException("Error updating train status: " + clientRequest.getException().getMessage(), 
+                                clientRequest.getException());
+        }
+        
+        
+        String result = (String) clientRequest.getResult();
+        logger.debug("Update train status result: {}", result);
+    }
+    
 }

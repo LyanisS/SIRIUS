@@ -17,12 +17,21 @@ public class Train {
     @JsonProperty("station_name")
     private Station station;
 
-    public Train() {}
+    public Train() {
+    }
 
     public Train(int id, TrainStatus status, TrackElement trackElement) {
         this.id = id;
         this.status = status;
         this.trackElement = trackElement;
+    }
+
+    public Train(int id, TrainStatus status, TrackElement trackElement, Station station_name) {
+        this.id = id;
+        this.status = status;
+        this.trackElement = trackElement;
+        this.station = station_name;
+
     }
 
     public int getId() {
@@ -51,17 +60,16 @@ public class Train {
 
     @Override
     public String toString() {
-        return "Train{" +
-                "id=" + this.id +
-                ", status=" + this.status +
-                ", trackElement=" + this.trackElement +
-                '}';
+        return "Train [id=" + id + ", status=" + status + ", trackElement=" + trackElement + ", station=" + station
+                + "]";
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || this.getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || this.getClass() != o.getClass())
+            return false;
 
         Train t = (Train) o;
         return this.id == t.id;
