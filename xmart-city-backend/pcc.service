@@ -1,0 +1,10 @@
+[Unit]
+Description=PCC Backend Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/java -jar /opt/pcc/backend.jar
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

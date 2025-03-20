@@ -1,6 +1,6 @@
-databaseName: "pds"
+databaseName: "pcc_prod"
 host: "pcc-db.e.lyanis.net"
 port: 3306
-username : "pds"
-password: ""
+username : "lyanis"
+password: "pcc"
 poolSize: 1
