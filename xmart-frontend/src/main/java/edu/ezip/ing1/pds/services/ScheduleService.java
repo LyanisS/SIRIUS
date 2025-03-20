@@ -25,7 +25,6 @@ public class ScheduleService {
 
     private final static String LoggingLabel = "FrontEnd - ScheduleService";
     private final static Logger logger = LoggerFactory.getLogger(LoggingLabel);
-    private final static String schedulesToBeInserted = "schedules-to-be-inserted.yaml";
 
     final String insertRequestOrder = "INSERT_SCHEDULE";
     final String selectRequestOrder = "SELECT_ALL_SCHEDULES";

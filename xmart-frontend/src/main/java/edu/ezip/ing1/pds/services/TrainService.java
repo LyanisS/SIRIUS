@@ -28,7 +28,6 @@ public class TrainService {
 
     private final static String LoggingLabel = "FrontEnd - TrainService";
     private final static Logger logger = LoggerFactory.getLogger(LoggingLabel);
-    private final static String trainsToBeInserted = "trains-to-be-inserted.yaml";
 
     final String insertRequestOrder = "INSERT_TRAIN";
     final String selectRequestOrder = "SELECT_ALL_TRAINS";
@@ -103,15 +102,11 @@ public class TrainService {
                 networkConfig,
                 birthdate++, request, null, requestBytes);
         clientRequests.push(clientRequest);
-        System.out.println("111111111111111111111111111111111111111111111");
 
         if (!clientRequests.isEmpty()) {
             final ClientRequest joinedClientRequest = clientRequests.pop();
             joinedClientRequest.join();
             logger.debug("Thread {} complete.", joinedClientRequest.getThreadName());
-
-            System.out.println("00000000000000000000000000000");
-
             return (Trains) joinedClientRequest.getResult();
         } else {
             logger.error("No trains found");
