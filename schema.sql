@@ -65,7 +65,7 @@ CREATE TABLE trip (
 
 CREATE TABLE schedule (
     schedule_id INT PRIMARY KEY AUTO_INCREMENT,
-    schedule_timeout DATETIME NOT NULL,
+    schedule_timestamp DATETIME NOT NULL,
     schedule_stop BOOLEAN NOT NULL,
     track_element_id INT NOT NULL REFERENCES track_element(track_element_id),
     trip_id INT NOT NULL REFERENCES trip(trip_id)
@@ -74,7 +74,7 @@ CREATE TABLE schedule (
 CREATE TABLE alert (
     alert_id INT PRIMARY KEY AUTO_INCREMENT,
     alert_message VARCHAR(255) NOT NULL,
-    alert_timeout DATETIME NOT NULL,
+    alert_timestamp DATETIME NOT NULL,
     alert_gravity_id INT NOT NULL REFERENCES alert_gravity(alert_gravity_id),
     train_id INT NOT NULL REFERENCES train(train_id)
 );
