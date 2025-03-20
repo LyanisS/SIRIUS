@@ -138,7 +138,7 @@ public class TrainTableView {
         String[] columnNames = {
                 "ID Train",
                 "Statut",
-                "Position (ID CDV)",
+                "Position ",
                 "Station"
         };
 
@@ -362,7 +362,7 @@ public class TrainTableView {
             this.frame.revalidate();
         } catch (Exception e) {
             showErrorDialog(e, "Erreur de chargement",
-                    "Erreur dans le chargement des données du train");
+                    "Erreur avec le chargement des données train");
         }
     }
 
@@ -370,7 +370,7 @@ public class TrainTableView {
         int selectedRow = table.getSelectedRow();
         if (selectedRow == -1) {
             showWarningDialog("Aucun train sélectionné",
-                    "Veuillez sélectionner un train à supprimer.");
+                    "Veuillez sélectionner un train à supprimer");
             return;
         }
 
@@ -380,13 +380,13 @@ public class TrainTableView {
 
             if (!"POSE".equals(stationName) && !"MAMO".equals(stationName)) {
                 showWarningDialog("Suppression impossible",
-                        "Impossible de supprimer ce train.\n\n" +
-                                "Seuls les trains situés dans les stations POSE ou MAMO peuvent être supprimés.");
+                        "Impossible de supprimer ce train\n\n" +
+                                "Seuls les trains situés dans les stations POSE ou MAMO peuvent être supprimés");
                 return;
             }
 
             if (showConfirmDialog("Confirmer la suppression",
-                    "Êtes-vous sûr de vouloir supprimer le train #" + trainId + " ?")) {
+                    "Êtes-vous sûr de vouloir supprimer le train " + trainId + " ?")) {
                 try {
 
                     this.service.deleteTrain(trainId);
@@ -407,25 +407,6 @@ public class TrainTableView {
     private void handleDeleteError(Exception e, int trainId) {
         String errorMessage = e.getMessage();
         String userFriendlyMessage;
-
-        if (errorMessage != null && errorMessage.contains("Connection")) {
-            userFriendlyMessage = "Erreur de connexion au serveur.\n\n" +
-                    "Veuillez vérifier votre connexion réseau et réessayer.";
-        } else if (errorMessage != null && errorMessage.contains("Unrecognized token")) {
-
-            userFriendlyMessage = "Le train a probablement été supprimé, mais une erreur est survenue lors du traitement de la réponse.\n\n"
-                    +
-                    "Veuillez actualiser la liste pour vérifier.";
-
-            try {
-                refreshTrainData();
-            } catch (Exception refreshError) {
-
-            }
-        } else {
-            userFriendlyMessage = "Une erreur est survenue lors de la suppression du train" +
-                    (trainId > 0 ? " #" + trainId : "") + ":\n\n" + errorMessage;
-        }
 
         showErrorDialog(e, "Erreur", userFriendlyMessage);
     }
@@ -508,7 +489,7 @@ public class TrainTableView {
         int selectedRow = table.getSelectedRow();
         if (selectedRow == -1) {
             showWarningDialog("Aucun train sélectionné",
-                    "Veuillez sélectionner un train pour mettre à jour son statut.");
+                    "Veuillez sélectionner un train pour mettre à jour son statut");
             return;
         }
 
@@ -521,7 +502,7 @@ public class TrainTableView {
             panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
             panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-            JLabel titleLabel = new JLabel("Mettre à jour le statut du train #" + trainId);
+            JLabel titleLabel = new JLabel("Mettre à jour le statut du train " + trainId);
             titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
             titleLabel.setForeground(TEXT_COLOR);
             titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -574,7 +555,7 @@ public class TrainTableView {
                     refreshTrainData();
 
                     showSuccessDialog("Mise à jour réussie",
-                            "Le statut du train #" + trainId + " a été mis à jour avec succès.");
+                            "Le statut du train #" + trainId + " a été mis à jour avec succès");
                 }
             }
         } catch (Exception e) {
@@ -591,10 +572,10 @@ public class TrainTableView {
         String userFriendlyMessage;
 
         if (errorMessage != null && errorMessage.contains("Connection")) {
-            userFriendlyMessage = "Erreur de connexion au serveur.\n\n" +
-                    "Veuillez vérifier votre connexion réseau et réessayer.";
+            userFriendlyMessage = "Erreur de connexion\n\n" +
+                    "Veuillez vérifier votre connexion réseau";
         } else if (errorMessage != null && errorMessage.contains("timeout")) {
-            userFriendlyMessage = "Le serveur ne répond pas. Veuillez réessayer plus tard.";
+            userFriendlyMessage = "Erreur";
         } else {
             userFriendlyMessage = baseMessage + ": " + errorMessage;
         }
@@ -648,17 +629,6 @@ public class TrainTableView {
 
     private void showPlanningView() {
 
-        JOptionPane.showMessageDialog(this.frame,
-                "La vue de planning sera implémentée dans une future version.",
-                "Fonctionnalité à venir",
-                JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void showAlarmsView() {
-
-        JOptionPane.showMessageDialog(this.frame,
-                "La vue des alarmes sera implémentée dans une future version.",
-                "Fonctionnalité à venir",
-                JOptionPane.INFORMATION_MESSAGE);
-    }
 }

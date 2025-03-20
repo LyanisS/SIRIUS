@@ -122,7 +122,7 @@ public class AddTrainStyle extends JDialog {
                 if (service.isTrackElementInUse(trackElementId)) {
                     JOptionPane.showMessageDialog(this,
                             "L'élément de voie (ID: " + trackElementId + ") est déjà utilisé par un autre train\n\n" +
-                                    "Veuillez choisir un autre élément de voie.",
+                                    "Veuillez choisir un autre élément de voie",
                             "Élément de voie déjà utilisé",
                             JOptionPane.WARNING_MESSAGE);
                     return false;
@@ -185,12 +185,10 @@ public class AddTrainStyle extends JDialog {
             String errorMessage = e.getMessage();
             String userFriendlyMessage;
 
-            if (errorMessage != null && (errorMessage.contains("Duplicate entry") ||
+            if (errorMessage != null && (errorMessage.contains("Duplicate valeur") ||
                     errorMessage.contains("Un train est déjà associé à cet élément de voie"))) {
                 userFriendlyMessage = "Erreur: Un train est déjà associé à cet élément de voie (ID: " +
-                        trackElementIdField.getText().trim() + ").\n\n" +
-
-                        "Veuillez choisir un autre élément de voie.";
+                        trackElementIdField.getText().trim() + ").\n\n" ;
 
                 JOptionPane.showMessageDialog(this,
                         userFriendlyMessage,
@@ -198,16 +196,14 @@ public class AddTrainStyle extends JDialog {
                         JOptionPane.WARNING_MESSAGE);
             } else if (errorMessage != null && errorMessage.contains("ID error")) {
                 userFriendlyMessage = "Erreur: L'élément de voie spécifié (ID: " +
-                        trackElementIdField.getText().trim() + ") n'existe pas.\n\n" +
-                        "Veuillez entrer un ID d'élément de voie valide";
+                        trackElementIdField.getText().trim() + ") n'existe pas\n\n";
 
                 JOptionPane.showMessageDialog(this,
                         userFriendlyMessage,
                         "Élément de voie invalide",
                         JOptionPane.ERROR_MESSAGE);
             } else if (errorMessage != null && errorMessage.contains("Connection")) {
-                userFriendlyMessage = "Erreur de connexion au serveur.\n\n" +
-                        "Veuillez vérifier votre connexion réseau et réessayer.";
+                userFriendlyMessage = "Erreur de connexion au serveur.\n\n";
 
                 JOptionPane.showMessageDialog(this,
                         userFriendlyMessage,
@@ -222,7 +218,7 @@ public class AddTrainStyle extends JDialog {
                         JOptionPane.ERROR_MESSAGE);
             }
 
-            System.err.println("Error adding train: " + e.getMessage());
+            System.err.println("Error add train: " + e.getMessage());
             e.printStackTrace();
         }
     }
