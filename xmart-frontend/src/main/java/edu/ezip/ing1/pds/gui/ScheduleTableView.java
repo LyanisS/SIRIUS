@@ -62,41 +62,33 @@ public class ScheduleTableView {
         this.frame.setTitle("Gestion du planning des trains - Système de Contrôle");
         this.frame.getTableJPanel().removeAll();
 
-        UIManager.put("Button.background", BACKGROUND_COLOR);
-        UIManager.put("Button.foreground", TEXT_COLOR);
-        UIManager.put("Panel.background", BACKGROUND_COLOR);
-        UIManager.put("OptionPane.background", BACKGROUND_COLOR);
-        UIManager.put("OptionPane.messageForeground", TEXT_COLOR);
-
-        JPanel container = new JPanel(new BorderLayout(10, 10));
-        container.setBackground(BACKGROUND_COLOR);
-        container.setBorder(new EmptyBorder(15, 15, 15, 15));
-
-        JPanel headerPanel = createHeaderPanel();
-        container.add(headerPanel, BorderLayout.NORTH);
-
         createStyledTable();
 
-        JPanel tablePanel = new JPanel(new BorderLayout());
-        tablePanel.setBackground(BACKGROUND_COLOR);
-        tablePanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
-                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
+        JPanel tablePanel = this.frame.getTableJPanel();
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(Color.WHITE);
         tablePanel.add(scrollPane, BorderLayout.CENTER);
 
-        container.add(tablePanel, BorderLayout.CENTER);
+        List<JButton> buttons = new ArrayList<>();
 
-        JPanel actionPanel = createActionPanel();
-        container.add(actionPanel, BorderLayout.SOUTH);
+        JButton addButton = MainInterfaceFrame.createActionButton("Ajouter un horaire", SUCCESS_COLOR);
+        addButton.addActionListener(e -> openAddScheduleDialog());
+        buttons.add(addButton);
 
-        this.frame.getMainJPanel().setLayout(new BorderLayout());
-        this.frame.getMainJPanel().add(container, BorderLayout.CENTER);
+        JButton editButton = MainInterfaceFrame.createActionButton("Modifier", PRIMARY_COLOR);
+        editButton.addActionListener(e -> openEditScheduleDialog());
+        buttons.add(editButton);
 
-        List<JButton> buttons = createToolbarButtons();
+        JButton deleteButton = MainInterfaceFrame.createActionButton("Supprimer", ACCENT_COLOR);
+        deleteButton.addActionListener(e -> deleteSchedule());
+        buttons.add(deleteButton);
+
+        JButton refreshButton = MainInterfaceFrame.createActionButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
+        refreshButton.addActionListener(e -> refreshScheduleData());
+        buttons.add(refreshButton);
+
         this.frame.registerJButtons(buttons);
 
         this.service = new ScheduleService(this.frame.getNetworkConfig());
@@ -142,8 +134,12 @@ public class ScheduleTableView {
             "Arrêt?"
         };
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        this.frame.getTableJPanel().add(scrollPane);
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
         table = new JTable(tableModel) {
             @Override
@@ -195,119 +191,13 @@ public class ScheduleTableView {
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
-    }
 
-    private JPanel createActionPanel() {
-        JPanel gradientPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gp = new GradientPaint(0, 0, new Color(245, 245, 245), 0, getHeight(), BACKGROUND_COLOR);
-                g2d.setPaint(gp);
-                g2d.fillRect(0, 0, getWidth(), getHeight());
-            }
-        };
-        gradientPanel.setLayout(new BorderLayout());
-        gradientPanel.setBorder(new EmptyBorder(15, 0, 0, 0));
-
-        JPanel actionPanel = new JPanel();
-        actionPanel.setOpaque(false);
-        actionPanel.setLayout(new BoxLayout(actionPanel, BoxLayout.X_AXIS));
-        actionPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        JButton addButton = createStyledButton("Ajouter un horaire", SUCCESS_COLOR);
-        addButton.addActionListener(e -> openAddScheduleDialog());
-
-        JButton editButton = createStyledButton("Modifier", PRIMARY_COLOR);
-        editButton.addActionListener(e -> openEditScheduleDialog());
-
-        JButton deleteButton = createStyledButton("Supprimer", ACCENT_COLOR);
-        deleteButton.addActionListener(e -> deleteSchedule());
-
-        actionPanel.add(addButton);
-        actionPanel.add(Box.createRigidArea(new Dimension(10, 0)));
-        actionPanel.add(editButton);
-        actionPanel.add(Box.createRigidArea(new Dimension(10, 0)));
-        actionPanel.add(deleteButton);
-        actionPanel.add(Box.createHorizontalGlue());
-
-        gradientPanel.add(actionPanel, BorderLayout.CENTER);
-        return gradientPanel;
-    }
-
-    private JButton createStyledButton(String text, Color color) {
-        JButton button = new JButton(text) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                if (getModel().isPressed()) {
-                    g2d.setColor(color.darker());
-                } else if (getModel().isRollover()) {
-                    g2d.setColor(color.brighter());
-                } else {
-                    g2d.setColor(color);
-                }
-
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-
-                super.paintComponent(g);
-            }
-        };
-
-        button.setForeground(Color.WHITE);
-        button.setFont(new Font("Arial", Font.BOLD, 12));
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setOpaque(false);
-        button.setBorder(new EmptyBorder(8, 15, 8, 15));
-
-        return button;
-    }
-
-    private List<JButton> createToolbarButtons() {
-        List<JButton> buttons = new ArrayList<>();
-
-        JButton addScheduleButton = MainInterfaceFrame.createActionButton("Ajouter un horaire", MainInterfaceFrame.SUCCESS_COLOR);
-        addScheduleButton.addActionListener(e -> openAddScheduleDialog());
-        buttons.add(addScheduleButton);
-
-        JButton refreshButton = MainInterfaceFrame.createActionButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
-        refreshButton.addActionListener(e -> refreshScheduleData());
-        buttons.add(refreshButton);
-
-        this.frame.registerJButtons(buttons);
-
-        return buttons;
-    }
-
-    private JButton createToolbarButton(String text) {
-        JButton button = new JButton(text);
-        button.setFont(new Font("Arial", Font.BOLD, 12));
-        button.setForeground(TEXT_COLOR);
-        button.setBackground(BACKGROUND_COLOR);
-        button.setFocusPainted(false);
-        button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 2, 0, PRIMARY_COLOR),
-                BorderFactory.createEmptyBorder(5, 15, 5, 15)));
-
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(new Color(225, 225, 225));
-            }
-
+        table.addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseExited(MouseEvent e) {
-                button.setBackground(BACKGROUND_COLOR);
+
             }
         });
-
-        return button;
     }
 
     private void refreshScheduleData() {
@@ -336,13 +226,13 @@ public class ScheduleTableView {
             this.frame.repaint();
             this.frame.revalidate();
         } catch (Exception e) {
-            showErrorDialog(e, "Erreur de chargement",
+            this.frame.showErrorDialog(e, "Erreur de chargement",
                     "Erreur lors de la récupération des données du planning");
         }
     }
 
     private void openAddScheduleDialog() {
-        styleDialogUIComponents();
+        MainInterfaceFrame.styleDialogUIComponents();
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -439,29 +329,29 @@ public class ScheduleTableView {
 
                     refreshScheduleData();
 
-                    showSuccessDialog("Parfait!", "L'horaire a été ajouté avec succès!");
+                    this.frame.showSuccessDialog("Parfait!", "L'horaire a été ajouté avec succès!");
 
                 } catch (Exception ex) {
-                    showErrorDialog(ex, "Erreur!!", "Vous avez une erreur lors de l'ajout de l'horaire!!");
+                    this.frame.showErrorDialog(ex, "Erreur!!", "Vous avez une erreur lors de l'ajout de l'horaire!!");
                 }
             } else {
-                showWarningDialog("Erreur!", "Il faut remplir tous les champs!");
+                this.frame.showWarningDialog("Erreur!", "Il faut remplir tous les champs!");
             }
         }
 
-        resetDialogUIComponents();
+        MainInterfaceFrame.resetDialogUIComponents();
     }
 
     private void openEditScheduleDialog() {
         int selectedRow = table.getSelectedRow();
 
         if (selectedRow == -1) {
-            showWarningDialog("Aucun horaire sélectionné!",
+            this.frame.showWarningDialog("Aucun horaire sélectionné!",
                     "Veuillez sélectionner un horaire à modifier.");
             return;
         }
 
-        styleDialogUIComponents();
+        MainInterfaceFrame.styleDialogUIComponents();
 
         int scheduleId = (int) tableModel.getValueAt(selectedRow, 0);
         String currentDatetime = (String) tableModel.getValueAt(selectedRow, 3);
@@ -532,167 +422,42 @@ public class ScheduleTableView {
 
                     refreshScheduleData();
 
-                    showSuccessDialog("Modification réussie!", "L'horaire a été modifié avec succès!");
+                    this.frame.showSuccessDialog("Modification réussie!", "L'horaire a été modifié avec succès!");
 
                 } catch (Exception ex) {
-                    showErrorDialog(ex, "Erreur!", "Vous avez une erreur! ");
+                    this.frame.showErrorDialog(ex, "Erreur!", "Vous avez une erreur! ");
                 }
             } else {
-                showWarningDialog("Erreur", "La date/heure ne peut pas être vide.");
+                this.frame.showWarningDialog("Erreur", "La date/heure ne peut pas être vide.");
             }
         }
 
-        resetDialogUIComponents();
+        MainInterfaceFrame.resetDialogUIComponents();
     }
 
     private void deleteSchedule() {
         int selectedRow = table.getSelectedRow();
 
         if (selectedRow == -1) {
-            showWarningDialog("Aucun horaire sélectionné",
+            this.frame.showWarningDialog("Aucun horaire sélectionné",
                     "Veuillez sélectionner un horaire à supprimer.");
             return;
         }
 
         int scheduleId = (int) tableModel.getValueAt(selectedRow, 0);
 
-        if (showConfirmDialog("Confirmer la suppression",
+        if (this.frame.showConfirmDialog("Confirmer la suppression",
                 "Voulez-vous vraiment supprimer l'horaire #" + scheduleId + " ?")) {
             try {
                 this.service.deleteSchedule(scheduleId);
 
                 refreshScheduleData();
 
-                showSuccessDialog("Suppression réussie", "L'horaire a été supprimé avec succès!");
+                this.frame.showSuccessDialog("Suppression réussie", "L'horaire a été supprimé avec succès!");
 
             } catch (Exception ex) {
-                showErrorDialog(ex, "Erreur", "Erreur lors de la suppression de l'horaire");
+                this.frame.showErrorDialog(ex, "Erreur", "Erreur lors de la suppression de l'horaire");
             }
         }
-    }
-
-    private void styleDialogUIComponents() {
-        UIManager.put("OptionPane.background", BACKGROUND_COLOR);
-        UIManager.put("OptionPane.messageForeground", TEXT_COLOR);
-        UIManager.put("OptionPane.messageFont", new Font("Arial", Font.PLAIN, 14));
-        UIManager.put("OptionPane.buttonFont", new Font("Arial", Font.BOLD, 12));
-
-        UIManager.put("Panel.background", BACKGROUND_COLOR);
-        UIManager.put("Label.font", new Font("Arial", Font.PLAIN, 12));
-        UIManager.put("Label.foreground", TEXT_COLOR);
-
-        UIManager.put("Button.background", PRIMARY_COLOR);
-        UIManager.put("Button.foreground", Color.WHITE);
-        UIManager.put("Button.font", new Font("Arial", Font.BOLD, 12));
-        UIManager.put("Button.focus", new Color(0, 0, 0, 0));
-
-        UIManager.put("TextField.background", Color.WHITE);
-        UIManager.put("TextField.foreground", TEXT_COLOR);
-        UIManager.put("TextField.caretForeground", PRIMARY_COLOR);
-        UIManager.put("TextField.border", BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(200, 200, 200)),
-                BorderFactory.createEmptyBorder(5, 7, 5, 7)));
-
-        UIManager.put("ComboBox.background", Color.WHITE);
-        UIManager.put("ComboBox.foreground", TEXT_COLOR);
-        UIManager.put("ComboBox.selectionBackground", PRIMARY_COLOR);
-        UIManager.put("ComboBox.selectionForeground", Color.WHITE);
-        UIManager.put("ComboBox.border", BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(200, 200, 200)),
-                BorderFactory.createEmptyBorder(2, 5, 2, 5)));
-    }
-
-    private void resetDialogUIComponents() {
-        UIManager.put("OptionPane.background", null);
-        UIManager.put("OptionPane.messageForeground", null);
-        UIManager.put("OptionPane.messageFont", null);
-        UIManager.put("OptionPane.buttonFont", null);
-
-        UIManager.put("Panel.background", null);
-        UIManager.put("Label.font", null);
-        UIManager.put("Label.foreground", null);
-
-        UIManager.put("Button.background", null);
-        UIManager.put("Button.foreground", null);
-        UIManager.put("Button.font", null);
-        UIManager.put("Button.focus", null);
-
-        UIManager.put("TextField.background", null);
-        UIManager.put("TextField.foreground", null);
-        UIManager.put("TextField.caretForeground", null);
-        UIManager.put("TextField.border", null);
-
-        UIManager.put("ComboBox.background", null);
-        UIManager.put("ComboBox.foreground", null);
-        UIManager.put("ComboBox.selectionBackground", null);
-        UIManager.put("ComboBox.selectionForeground", null);
-        UIManager.put("ComboBox.border", null);
-    }
-
-    private void showErrorDialog(Exception e, String title, String baseMessage) {
-        styleDialogUIComponents();
-
-        String errorMessage = e.getMessage();
-        String userFriendlyMessage;
-
-        if (errorMessage != null && errorMessage.contains("Connection")) {
-            userFriendlyMessage = "Erreur de connexion au serveur.\n\n"
-                    + "Veuillez vérifier votre connexion réseau et réessayer.";
-        } else if (errorMessage != null && errorMessage.contains("timeout")) {
-            userFriendlyMessage = "Le serveur ne répond pas. Veuillez réessayer plus tard.";
-        } else {
-            userFriendlyMessage = baseMessage + ": " + errorMessage;
-        }
-
-        JOptionPane.showMessageDialog(this.frame,
-                userFriendlyMessage,
-                title,
-                JOptionPane.ERROR_MESSAGE
-        );
-
-        resetDialogUIComponents();
-    }
-
-    private void showSuccessDialog(String title, String message) {
-        styleDialogUIComponents();
-
-        JOptionPane.showMessageDialog(this.frame,
-                message,
-                title,
-                JOptionPane.INFORMATION_MESSAGE);
-
-        resetDialogUIComponents();
-    }
-
-    private void showWarningDialog(String title, String message) {
-        styleDialogUIComponents();
-
-        JOptionPane.showMessageDialog(this.frame,
-                message,
-                title,
-                JOptionPane.WARNING_MESSAGE);
-
-        resetDialogUIComponents();
-    }
-
-    private boolean showConfirmDialog(String title, String message) {
-        styleDialogUIComponents();
-
-        int result = JOptionPane.showConfirmDialog(this.frame,
-                message,
-                title,
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE);
-
-        resetDialogUIComponents();
-        return result == JOptionPane.YES_OPTION;
-    }
-
-    private void showTrainView() {
-        TrainTableView trainTableView = new TrainTableView(this.frame);
-    }
-
-    private void showStatisticsView() {
-
     }
 }
