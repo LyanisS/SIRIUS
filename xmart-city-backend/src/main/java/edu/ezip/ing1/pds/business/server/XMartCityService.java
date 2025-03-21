@@ -245,18 +245,33 @@ public class XMartCityService {
     private Response InsertSchedule(final Request request, final Connection connection) throws SQLException, IOException {
         final ObjectMapper objectMapper = new ObjectMapper();
         final Schedule schedule = objectMapper.readValue(request.getRequestBody(), Schedule.class);
-        final PreparedStatement stmt = connection.prepareStatement(Queries.INSERT_SCHEDULE.query, Statement.RETURN_GENERATED_KEYS);
-        stmt.setTimestamp(1, schedule.getTimestamp());
-        stmt.setBoolean(2, schedule.getStop());
-        stmt.setInt(3, schedule.getTrackElement().getId());
-        stmt.setInt(4, schedule.getTrip().getId());
-        stmt.executeUpdate();
-        ResultSet res = stmt.getGeneratedKeys();
-        if (res.next()) {
-            schedule.setId(res.getInt(1));
-        }
 
-        return new Response(request.getRequestId(), objectMapper.writeValueAsString(schedule));
+        try {
+            connection.setAutoCommit(false);
+
+            final PreparedStatement stmt = connection.prepareStatement(Queries.INSERT_SCHEDULE.query, Statement.RETURN_GENERATED_KEYS);
+            stmt.setTimestamp(1, schedule.getTimestamp());
+            stmt.setBoolean(2, schedule.getStop());
+            stmt.setInt(3, schedule.getTrackElement().getId());
+            stmt.setInt(4, schedule.getTrip().getId());
+            stmt.executeUpdate();
+            ResultSet res = stmt.getGeneratedKeys();
+            if (res.next()) {
+                schedule.setId(res.getInt(1));
+            }
+
+            connection.commit();
+
+            String responseJson = objectMapper.writeValueAsString(schedule);
+            logger.debug("Insert schedule response: {}", responseJson);
+            return new Response(request.getRequestId(), responseJson);
+        } catch (SQLException e) {
+            connection.rollback();
+            logger.error("SQL error inserting schedule: {}", e.getMessage());
+            throw new SQLException("Erreur lors de l'insertion de l'horaire: " + e.getMessage(), e);
+        } finally {
+            connection.setAutoCommit(true);
+        }
     }
 
     private Response SelectAllSchedules(final Request request, final Connection connection) throws SQLException, JsonProcessingException {
@@ -344,6 +359,8 @@ public class XMartCityService {
         int scheduleId = jsonNode.get("id").asInt();
 
         try {
+            connection.setAutoCommit(false); // Disable autocommit
+
             PreparedStatement checkStmt = connection.prepareStatement(
                     "SELECT schedule_id FROM schedule WHERE schedule_id = ?");
             checkStmt.setInt(1, scheduleId);
@@ -361,15 +378,17 @@ public class XMartCityService {
                 throw new SQLException("Aucun horaire n'a été supprimé. L'horaire " + scheduleId + " n'existe pas.");
             }
 
-            connection.commit(); // Ensure the transaction is committed
+            connection.commit();
 
             String responseJson = "{\"success\": true, \"message\": \"Horaire " + scheduleId + " supprimé avec succès.\"}";
             logger.debug("Delete schedule response: {}", responseJson);
             return new Response(request.getRequestId(), responseJson);
         } catch (SQLException e) {
-            connection.rollback(); // Rollback the transaction in case of error
+            connection.rollback();
             logger.error("SQL error deleting schedule: {}", e.getMessage());
             throw new SQLException("Erreur lors de la suppression de l'horaire: " + e.getMessage(), e);
+        } finally {
+            connection.setAutoCommit(true);
         }
     }
 
