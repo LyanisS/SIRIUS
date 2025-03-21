@@ -6,9 +6,9 @@ import edu.ezip.commons.LoggingUtils;
 import edu.ezip.ing1.pds.business.dto.Alert;
 import edu.ezip.ing1.pds.business.dto.Alerts;
 import edu.ezip.ing1.pds.client.commons.ClientRequest;
-import edu.ezip.ing1.pds.client.commons.ConfigLoader;
 import edu.ezip.ing1.pds.client.commons.NetworkConfig;
 import edu.ezip.ing1.pds.commons.Request;
+import edu.ezip.ing1.pds.requests.DeleteAlertClientRequest;
 import edu.ezip.ing1.pds.requests.InsertAlertClientRequest;
 import edu.ezip.ing1.pds.requests.SelectAllAlertsClientRequest;
 import org.slf4j.Logger;
@@ -34,7 +34,7 @@ public class AlertService {
         this.networkConfig = networkConfig;
     }
 
-    public void insertAlert(Alerts alerts) throws InterruptedException, IOException {
+    public void insertAlerts(Alerts alerts) throws InterruptedException, IOException {
         final Deque<ClientRequest> clientRequests = new ArrayDeque<>();
 
         int birthdate = 0;
@@ -93,4 +93,38 @@ public class AlertService {
             return null;
         }
     }
+
+    public void deleteAlert(int alertId) throws InterruptedException, IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final String requestId = UUID.randomUUID().toString();
+        final Request request = new Request();
+        request.setRequestId(requestId);
+        request.setRequestOrder("DELETE_ALERT");
+
+        Alert alert = new Alert();
+        alert.setId(alertId);
+
+        final String jsonifiedAlert = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(alert);
+
+        request.setRequestContent(jsonifiedAlert);
+
+        objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
+        final byte[] requestBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(request);
+
+
+        final DeleteAlertClientRequest clientRequest = new DeleteAlertClientRequest(
+                networkConfig, 0, request, alert, requestBytes);
+
+        clientRequest.join();
+
+        if (clientRequest.getException() != null) {
+            throw new IOException("Error deleting alert: " + clientRequest.getException().getMessage(),
+                    clientRequest.getException());
+        }
+
+
+        Alert result = clientRequest.getResult();
+        logger.debug("Delete alert result: {}", result);
+    }
+
 }

@@ -26,7 +26,7 @@ public class ScheduleTableView {
     public ScheduleTableView(MainInterfaceFrame frame) {
         this.frame = frame;
         this.frame.setTitle("Gestion du planning des trains");
-        this.frame.getMainJPanel().removeAll();
+        this.frame.getTableJPanel().removeAll();
 
         String[] columnNames = {
             "ID Horaire",
@@ -39,17 +39,17 @@ public class ScheduleTableView {
         table = new JTable(tableModel);
 
         JScrollPane scrollPane = new JScrollPane(table);
-        this.frame.getMainJPanel().add(scrollPane);
+        this.frame.getTableJPanel().add(scrollPane);
 
         List<JButton> buttons = new ArrayList<>();
 
-        JButton refreshButton = new JButton("Actualiser");
-        refreshButton.addActionListener(e -> refreshScheduleData());
-        buttons.add(refreshButton);
-
-        JButton addScheduleButton = new JButton("Ajouter un horaire");
+        JButton addScheduleButton = MainInterfaceFrame.createActionButton("Ajouter un horaire", MainInterfaceFrame.SUCCESS_COLOR);
         addScheduleButton.addActionListener(e -> openAddScheduleDialog());
         buttons.add(addScheduleButton);
+
+        JButton refreshButton = MainInterfaceFrame.createActionButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
+        refreshButton.addActionListener(e -> refreshScheduleData());
+        buttons.add(refreshButton);
 
         this.frame.registerJButtons(buttons);
 
