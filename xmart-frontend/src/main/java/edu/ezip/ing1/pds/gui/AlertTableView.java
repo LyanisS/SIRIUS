@@ -5,7 +5,13 @@ import edu.ezip.ing1.pds.business.dto.Alerts;
 import edu.ezip.ing1.pds.services.AlertService;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,12 +26,14 @@ public class AlertTableView {
         this.frame.setTitle("Gestion des alarmes");
         this.frame.getTableJPanel().removeAll();
 
-        String[] columnNames = { "ID Alarme", "Message", "Date/Heure", "Gravité", "Train" };
-        tableModel = new DefaultTableModel(columnNames, 0);
-        table = new JTable(tableModel);
+        createStyledTable();
+
+        JPanel tablePanel = this.frame.getTableJPanel();
 
         JScrollPane scrollPane = new JScrollPane(table);
-        this.frame.getTableJPanel().add(scrollPane);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        tablePanel.add(scrollPane, BorderLayout.CENTER);
 
         List<JButton> buttons = new ArrayList<>();
 
@@ -47,6 +55,77 @@ public class AlertTableView {
 
         this.refreshAlertData();
     }
+
+    private void createStyledTable() {
+        String[] columnNames = { "ID Alarme", "Message", "Date/Heure", "Gravité", "Train" };
+
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        table = new JTable(tableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component comp = super.prepareRenderer(renderer, row, column);
+
+                if (!isRowSelected(row)) {
+                    comp.setBackground(row % 2 == 0 ? Color.WHITE : MainInterfaceFrame.TABLE_ALTERNATE_ROW);
+                } else {
+
+                    comp.setBackground(
+                            new Color(MainInterfaceFrame.PRIMARY_COLOR.getRed(), MainInterfaceFrame.PRIMARY_COLOR.getGreen(), MainInterfaceFrame.PRIMARY_COLOR.getBlue(), 80));
+                    comp.setForeground(MainInterfaceFrame.TEXT_COLOR.darker());
+                }
+
+                return comp;
+            }
+        };
+
+        table.setRowHeight(30);
+        table.setIntercellSpacing(new Dimension(10, 5));
+        table.setGridColor(new Color(230, 230, 230));
+        table.setSelectionBackground(
+                new Color(MainInterfaceFrame.PRIMARY_COLOR.getRed(), MainInterfaceFrame.PRIMARY_COLOR.getGreen(), MainInterfaceFrame.PRIMARY_COLOR.getBlue(), 100));
+        table.setSelectionForeground(MainInterfaceFrame.TEXT_COLOR.darker());
+        table.setShowVerticalLines(false);
+        table.setFillsViewportHeight(true);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = table.rowAtPoint(e.getPoint());
+                if (row >= 0) {
+                    table.setRowSelectionInterval(row, row);
+                }
+            }
+        });
+
+        JTableHeader header = table.getTableHeader();
+        header.setBackground(MainInterfaceFrame.TABLE_HEADER_COLOR);
+        header.setForeground(Color.WHITE);
+        header.setFont(new Font("Arial", Font.BOLD, 12));
+        header.setBorder(null);
+        header.setPreferredSize(new Dimension(0, 35));
+
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
+
+        table.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseExited(MouseEvent e) {
+
+            }
+        });
+    }
+
 
     private void refreshAlertData() {
         try {

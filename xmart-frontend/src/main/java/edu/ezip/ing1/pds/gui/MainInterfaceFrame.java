@@ -36,7 +36,7 @@ public class MainInterfaceFrame extends JFrame {
     public MainInterfaceFrame() {
         super("PCC");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setSize(600, 400);
+        this.setSize(900, 600);
         this.networkConfig = ConfigLoader.loadConfig(NetworkConfig.class, "network.yaml");
 
         UIManager.put("Button.background", BACKGROUND_COLOR);

@@ -35,6 +35,7 @@ public class AddAlertStyle extends JDialog {
         mainPanel.add(new JLabel("Gravité :"));
         gravityComboBox = new JComboBox<>();
         for (AlertGravity gravity : AlertGravity.values()) {
+            if (gravity == AlertGravity.UNKNOWN) continue;
             gravityComboBox.addItem(gravity.getType());
         }
         mainPanel.add(gravityComboBox);
