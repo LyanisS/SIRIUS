@@ -47,7 +47,5 @@ jobs:
           REMOTE_PORT: ${{ env.SSH_PORT }}
           REMOTE_USER: ${{ env.SSH_USER }}
           TARGET: '/opt/pcc/backend.jar'
-          SCRIPT_BEFORE: |
-            sudo systemctl stop pcc.service
           SCRIPT_AFTER_REQUIRED: |
-            sudo systemctl start pcc.service
+            sudo systemctl restart pcc.service
