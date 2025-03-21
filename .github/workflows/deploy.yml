@@ -1,0 +1,53 @@
+name: Deploy backend
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DB_CONFIG_FILE: rdbms-connection-pool/src/main/resources/db-config.yaml
+  BACKEND_CONFIG_FILE: xmart-city-backend/src/main/resources/core-backend-server.yaml
+
+jobs:
+  deploy:
+    runs-on: episen-pcc
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set env variables and secrets based on branch
+        run: |
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            yq -iY '.host = "${{ vars.PROD_DB_HOST }}"' $DB_CONFIG_FILE
+            yq -iY '.port = "${{ vars.PROD_DB_PORT }}"' $DB_CONFIG_FILE
+            yq -iY '.poolSize = "${{ vars.PROD_DB_POOL_SIZE }}"' $DB_CONFIG_FILE
+            yq -iY '.databaseName = "${{ vars.PROD_DB_NAME }}"' $DB_CONFIG_FILE
+            yq -iY '.username = "${{ vars.PROD_DB_USER }}"' $DB_CONFIG_FILE
+            yq -iY '.password = "${{ secrets.PROD_DB_PASSWORD }}"' $DB_CONFIG_FILE
+            yq -iY '.listenPort = "${{ vars.PROD_BACKEND_PORT }}"' $BACKEND_CONFIG_FILE
+            echo "SSH_HOST=${{ vars.PROD_SSH_HOST }}" >> $GITHUB_ENV
+            echo "SSH_PORT=${{ vars.PROD_SSH_PORT }}" >> $GITHUB_ENV
+            echo "SSH_USER=${{ vars.PROD_SSH_USER }}" >> $GITHUB_ENV
+          else
+            echo "Workflow is running on wrong branch. Exiting..."
+            exit 1
+          fi            
+
+      - name: Build with Maven
+        run: mvn package
+
+      - name: Deploy to backend server
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ARGS: '-zvci'
+          SOURCE: 'xmart-city-backend/target/*-with-dependencies.jar'
+          REMOTE_HOST: ${{ env.SSH_HOST }}
+          REMOTE_PORT: ${{ env.SSH_PORT }}
+          REMOTE_USER: ${{ env.SSH_USER }}
+          TARGET: '/opt/pcc/backend.jar'
+          SCRIPT_BEFORE: |
+            sudo systemctl stop pcc.service
+          SCRIPT_AFTER_REQUIRED: |
+            sudo systemctl start pcc.service
