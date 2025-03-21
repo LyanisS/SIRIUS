@@ -1,6 +1,7 @@
 databaseName: "pcc_prod"
-host: "pcc-db.e.lyanis.net"
+host: "172.31.252.153"
 port: 3306
-username : "lyanis"
+username : "elyasmine"
 password: "pcc"
 poolSize: 1
+

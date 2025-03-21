@@ -47,7 +47,11 @@ jobs:
           REMOTE_PORT: ${{ env.SSH_PORT }}
           REMOTE_USER: ${{ env.SSH_USER }}
           TARGET: '/opt/pcc/backend.jar'
-          SCRIPT_BEFORE: |
-            sudo systemctl stop pcc.service
-          SCRIPT_AFTER_REQUIRED: |
-            sudo systemctl start pcc.service
+      - name: Restarting backend server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.SSH_HOST }}
+          port: ${{ env.SSH_PORT }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: sudo systemctl restart pcc.service
