@@ -147,9 +147,12 @@ public class ScheduleService {
         final DeleteScheduleClientRequest clientRequest = new DeleteScheduleClientRequest(
                 networkConfig, 0, request, scheduleId, requestBytes);
 
+        logger.debug("Sending delete request for scheduleId: {}", scheduleId);
+        logger.debug("Request content: {}", jsonContent);
         clientRequest.join();
 
         if (clientRequest.getException() != null) {
+            logger.error("Error deleting schedule: {}", clientRequest.getException().getMessage());
             throw new IOException("Error deleting schedule: " + clientRequest.getException().getMessage(),
                     clientRequest.getException());
         }
