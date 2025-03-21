@@ -52,6 +52,7 @@ public class XMartCityService {
         INSERT_SCHEDULE(
                 "INSERT INTO schedule (schedule_timestamp, schedule_stop, track_element_id, trip_id) VALUES (?, ?, ?, ?);"),
         UPDATE_SCHEDULE("UPDATE schedule SET schedule_stop = ? WHERE schedule_id = ?;"),
+        DELETE_SCHEDULE("DELETE FROM schedule WHERE schedule_id = ?;"),
         SELECT_ALL_ALERTS(
                 "SELECT alert_id, alert_message, alert_timestamp, alert_gravity_id, train_id, train_status_id FROM alert JOIN train USING (train_id);"),
         INSERT_ALERT(
@@ -102,6 +103,9 @@ public class XMartCityService {
                 break;
             case INSERT_SCHEDULE:
                 response = InsertSchedule(request, connection);
+                break;
+            case DELETE_SCHEDULE:
+                response = DeleteSchedule(request, connection);
                 break;
             case SELECT_ALL_ALERTS:
                 response = SelectAllAlerts(request, connection);
@@ -330,6 +334,42 @@ public class XMartCityService {
         } catch (SQLException e) {
             logger.error("SQL error updating schedule: {}", e.getMessage());
             throw new SQLException("Erreur lors de la mise à jour de l'horaire: " + e.getMessage(), e);
+        }
+    }
+
+    private Response DeleteSchedule(final Request request, final Connection connection) throws SQLException, IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+
+        JsonNode jsonNode = objectMapper.readTree(request.getRequestBody());
+        int scheduleId = jsonNode.get("id").asInt();
+
+        try {
+            PreparedStatement checkStmt = connection.prepareStatement(
+                    "SELECT schedule_id FROM schedule WHERE schedule_id = ?");
+            checkStmt.setInt(1, scheduleId);
+            ResultSet checkRes = checkStmt.executeQuery();
+
+            if (!checkRes.next()) {
+                throw new SQLException("L'horaire " + scheduleId + " n'existe pas.");
+            }
+
+            PreparedStatement deleteStmt = connection.prepareStatement(Queries.DELETE_SCHEDULE.query);
+            deleteStmt.setInt(1, scheduleId);
+            int rowsAffected = deleteStmt.executeUpdate();
+
+            if (rowsAffected == 0) {
+                throw new SQLException("Aucun horaire n'a été supprimé. L'horaire " + scheduleId + " n'existe pas.");
+            }
+
+            connection.commit(); // Ensure the transaction is committed
+
+            String responseJson = "{\"success\": true, \"message\": \"Horaire " + scheduleId + " supprimé avec succès.\"}";
+            logger.debug("Delete schedule response: {}", responseJson);
+            return new Response(request.getRequestId(), responseJson);
+        } catch (SQLException e) {
+            connection.rollback(); // Rollback the transaction in case of error
+            logger.error("SQL error deleting schedule: {}", e.getMessage());
+            throw new SQLException("Erreur lors de la suppression de l'horaire: " + e.getMessage(), e);
         }
     }
 
