@@ -5,41 +5,25 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 
 @JsonRootName(value = "alert_gravity")
 public enum AlertGravity {
-    UNKNOWN(0, 0, "inconnu"),
-    LOW(1, 1, "Faible"),
-    MEDIUM(2, 2, "Moyen"),
-    HIGH(2, 3, "Élevé");
-
-    @JsonProperty("id")
-    private final int id;
-
-    @JsonProperty("level")
-    private final int level;
+    UNKNOWN("inconnu"),
+    LOW( "Faible"),
+    MEDIUM( "Moyen"),
+    HIGH( "Élevé");
 
     @JsonProperty("type")
     private final String type;
 
-    AlertGravity(int id, int level, String type) {
-        this.id = id;
-        this.level = level;
+    AlertGravity(String type) {
         this.type = type;
-    }
-
-    public int getId() {
-        return this.id;
-    }
-
-    public int getLevel() {
-        return this.level;
     }
 
     public String getType() {
         return this.type;
     }
 
-    public static AlertGravity getById(int id) {
+    public static AlertGravity getByTypeName(String type) {
         for (AlertGravity ag : values()) {
-            if (ag.getId() == id)
+            if (ag.getType().equals(type))
                 return ag;
         }
         return UNKNOWN;
@@ -47,10 +31,6 @@ public enum AlertGravity {
 
     @Override
     public String toString() {
-        return "AlertGravity{" +
-                "id=" + this.id +
-                "level=" + this.level +
-                ", type=" + this.type +
-                '}';
+        return "AlertGravity{type=" + this.type + '}';
     }
 }

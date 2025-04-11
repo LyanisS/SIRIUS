@@ -1,6 +1,6 @@
 package edu.ezip.ing1.pds.business.dto;
 
-import java.sql.Timestamp;
+import java.sql.Time;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -10,25 +10,25 @@ public class Schedule {
     @JsonProperty("id")
     private int id;
 
-    @JsonProperty("stop")
-    private boolean stop;
+    @JsonProperty("time_arrival")
+    private Time timeArrival;
 
-    @JsonProperty("timestamp")
-    private Timestamp timestamp;
+    @JsonProperty("time_departure")
+    private Time timeDeparture;
 
-    @JsonProperty("track_element")
-    private TrackElement trackElement;
+    @JsonProperty("station")
+    private Station station;
 
     @JsonProperty("trip")
     private Trip trip;
 
     public Schedule() {}
 
-    public Schedule(int id, Timestamp timestamp, boolean stop, TrackElement trackElement, Trip trip) {
+    public Schedule(int id, Time timeArrival, Time timeDeparture, Station station, Trip trip) {
         this.id = id;
-        this.timestamp = timestamp;
-        this.stop = stop;
-        this.trackElement = trackElement;
+        this.timeArrival = timeArrival;
+        this.timeDeparture = timeDeparture;
+        this.station = station;
         this.trip = trip;
     }
 
@@ -36,40 +36,32 @@ public class Schedule {
         return this.id;
     }
 
-    public Trip getTrip() {
-        return this.trip;
-    }
-
-    public TrackElement getTrackElement() {
-        return this.trackElement;
-    }
-
-    public boolean getStop() {
-        return this.stop;
-    }
-
-    public Timestamp getTimestamp() {
-        return this.timestamp;
-    }
-
     public void setId(int id) {
         this.id = id;
+    }
+
+    public Trip getTrip() {
+        return this.trip;
     }
 
     public void setTrip(Trip trip) {
         this.trip = trip;
     }
 
-    public void setTrackElement(TrackElement trackElement) {
-        this.trackElement = trackElement;
+    public Station getStation() {
+        return this.station;
     }
 
-    public void setStop(boolean stop) {
-        this.stop = stop;
+    public void setStation(Station station) {
+        this.station = station;
     }
 
-    public void setTimestamp(Timestamp timestamp) {
-        this.timestamp = timestamp;
+    public Time getTimeArrival() {
+        return this.timeArrival;
+    }
+
+    public void setTimeArrival(Time timeArrival) {
+        this.timeArrival = timeArrival;
     }
 
     @Override
@@ -77,9 +69,8 @@ public class Schedule {
         return "Schedule{" +
                 "id=" + this.id +
                 ", trip=" + this.trip +
-                ", trackElement=" + this.trackElement +
-                ", timestamp=" + this.timestamp +
-                ", stop=" + this.stop +
+                ", station=" + this.station +
+                ", timeArrival=" + this.timeArrival +
                 '}';
     }
 

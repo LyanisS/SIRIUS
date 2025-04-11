@@ -7,33 +7,30 @@ import java.util.Set;
 
 @JsonRootName(value = "person")
 public class Person {
-    @JsonProperty("id")
-    private int id;
+    @JsonProperty("login")
+    private String login;
     @JsonProperty("last_name")
     private String lastName;
     @JsonProperty("first_name")
     private String firstName;
-    @JsonProperty("login")
-    private String login;
     @JsonProperty("roles")
     private Set<Role> roles;
 
     public Person() {}
 
-    public Person(int id, String lastName, String firstName, String login, Set<Role> roles) {
-        this.id = id;
+    public Person(String login, String lastName, String firstName, Set<Role> roles) {
+        this.login = login;
         this.lastName = lastName;
         this.firstName = firstName;
-        this.login = login;
         this.roles = roles;
     }
 
-    public int getId() {
-        return id;
+    public String getLogin() {
+        return this.login;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setLogin(String login) {
+        this.login = login;
     }
 
     public String getLastName() {
@@ -52,14 +49,6 @@ public class Person {
         this.firstName = firstName;
     }
 
-    public String getLogin() {
-        return this.login;
-    }
-
-    public void setLogin(String login) {
-        this.login = login;
-    }
-
     public Set<Role> getRoles() {
         return this.roles;
     }
@@ -71,10 +60,9 @@ public class Person {
     @Override
     public String toString() {
         return "Person{" +
-                "id=" + this.id +
+                "login=" + this.login +
                 ", lastName=" + this.lastName +
                 ", firstName=" + this.firstName +
-                ", login=" + this.login +
                 ", roles=" + this.roles +
                 '}';
     }
@@ -87,6 +75,6 @@ public class Person {
         if (o == null || this.getClass() != o.getClass()) return false;
 
         Person p = (Person) o;
-        return this.id == p.id;
+        return p.getLogin().equals(this.login);
     }
 }

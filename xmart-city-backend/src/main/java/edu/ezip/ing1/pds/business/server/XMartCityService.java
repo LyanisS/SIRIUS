@@ -2,11 +2,7 @@ package edu.ezip.ing1.pds.business.server;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +18,6 @@ import edu.ezip.ing1.pds.business.dto.Person;
 import edu.ezip.ing1.pds.business.dto.Schedule;
 import edu.ezip.ing1.pds.business.dto.Schedules;
 import edu.ezip.ing1.pds.business.dto.Station;
-import edu.ezip.ing1.pds.business.dto.SwitchPosition;
 import edu.ezip.ing1.pds.business.dto.Track;
 import edu.ezip.ing1.pds.business.dto.TrackElement;
 import edu.ezip.ing1.pds.business.dto.TrackElementType;
@@ -469,12 +464,14 @@ public class XMartCityService {
         final ResultSet res = stmt.executeQuery(Queries.SELECT_ALL_ALERTS.query);
         Alerts alerts = new Alerts();
         while (res.next()) {
+            Time time = res.getTime("alert_timestamp");
             alerts.add(
                     new Alert(
                             res.getInt("alert_id"),
                             res.getString("alert_message"),
-                            res.getTimestamp("alert_timestamp"),
-                            AlertGravity.getById(res.getInt("alert_gravity_id")),
+                            res.getTime("alert_time"),
+                            res.getInt("alert_duration"),
+                            AlertGravity.getByTypeName(res.getString("alert_gravity_type")),
                             new Train(res.getInt("train_id"), TrainStatus.getById(res.getInt("train_status_id")), null)
                     )
             );

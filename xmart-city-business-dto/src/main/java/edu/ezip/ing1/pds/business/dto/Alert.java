@@ -3,7 +3,7 @@ package edu.ezip.ing1.pds.business.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
-import java.sql.Timestamp;
+import java.sql.Time;
 
 @JsonRootName(value = "alert")
 public class Alert {
@@ -11,8 +11,10 @@ public class Alert {
     private int id;
     @JsonProperty("message")
     private String message;
-    @JsonProperty("timestamp")
-    private Timestamp timestamp;
+    @JsonProperty("time")
+    private Time time;
+    @JsonProperty("duration")
+    private int duration;
     @JsonProperty("gravity")
     private AlertGravity gravity;
     @JsonProperty("train")
@@ -20,10 +22,11 @@ public class Alert {
 
     public Alert() {}
 
-    public Alert(int id, String message, Timestamp timestamp, AlertGravity gravity, Train train) {
+    public Alert(int id, String message, Time time, int duration, AlertGravity gravity, Train train) {
         this.id = id;
         this.message = message;
-        this.timestamp = timestamp;
+        this.time = time;
+        this.duration = duration;
         this.gravity = gravity;
         this.train = train;
     }
@@ -44,12 +47,20 @@ public class Alert {
         this.message = message;
     }
 
-    public Timestamp getTimestamp() {
-        return this.timestamp;
+    public Time getTime() {
+        return this.time;
     }
 
-    public void setTimestamp(Timestamp timestamp) {
-        this.timestamp = timestamp;
+    public void setTime(Time time) {
+        this.time = time;
+    }
+
+    public int getDuration() {
+        return this.duration;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
     }
 
     public AlertGravity getGravity() {
@@ -73,7 +84,7 @@ public class Alert {
         return "Alert{" +
                 "id=" + this.id +
                 ", message=" + this.message +
-                ", timestamp=" + this.timestamp +
+                ", time=" + this.time +
                 ", gravity=" + this.gravity +
                 ", train=" + this.train +
                 '}';

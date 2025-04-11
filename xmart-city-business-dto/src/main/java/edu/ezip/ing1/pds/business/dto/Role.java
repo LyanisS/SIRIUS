@@ -5,33 +5,25 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 
 @JsonRootName(value = "role")
 public enum Role {
-    UNKNOWN(0, "inconnu"),
-    CREG(1, "CREG"),
-    GT(2, "GT"),
-    DRIVER(2, "Conducteur");
-
-    @JsonProperty("id")
-    private final int id;
+    UNKNOWN("inconnu"),
+    CREG("CREG"),
+    GT("GT"),
+    DRIVER("Conducteur");
 
     @JsonProperty("name")
     private final String name;
 
-    Role(int id, String name) {
-        this.id = id;
+    Role(String name) {
         this.name = name;
-    }
-
-    public int getId() {
-        return this.id;
     }
 
     public String getName() {
         return this.name;
     }
 
-    public static Role getById(int id) {
+    public static Role getByName(String name) {
         for (Role r : values()) {
-            if (r.getId() == id)
+            if (r.getName().equals(name))
                 return r;
         }
         return UNKNOWN;
@@ -39,9 +31,6 @@ public enum Role {
 
     @Override
     public String toString() {
-        return "Role{" +
-                "id=" + this.id +
-                ", name=" + this.name +
-                '}';
+        return "Role{name=" + this.name + '}';
     }
 }
