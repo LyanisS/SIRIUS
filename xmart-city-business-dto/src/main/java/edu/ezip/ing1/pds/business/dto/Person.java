@@ -18,6 +18,10 @@ public class Person {
 
     public Person() {}
 
+    public Person(String login, String lastName, String firstName) {
+        this(login, lastName, firstName, null);
+    }
+
     public Person(String login, String lastName, String firstName, Set<Role> roles) {
         this.login = login;
         this.lastName = lastName;

@@ -64,6 +64,14 @@ public class Schedule {
         this.timeArrival = timeArrival;
     }
 
+    public Time getTimeDeparture() {
+        return this.timeDeparture;
+    }
+
+    public void setTimeDeparture(Time timeDeparture) {
+        this.timeDeparture = timeDeparture;
+    }
+
     @Override
     public String toString() {
         return "Schedule{" +
