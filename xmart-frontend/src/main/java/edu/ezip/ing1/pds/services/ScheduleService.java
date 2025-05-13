@@ -28,15 +28,18 @@ public class ScheduleService {
     private final static String LoggingLabel = "FrontEnd - ScheduleService";
     private final static Logger logger = LoggerFactory.getLogger(LoggingLabel);
 
-    final String insertRequestOrder = "INSERT_SCHEDULE";
-    final String selectRequestOrder = "SELECT_ALL_SCHEDULES";
-    final String deleteRequestOrder = "DELETE_SCHEDULE";
-    final String updateRequestOrder = "UPDATE_SCHEDULE";
+    private final static String INSERT_REQUEST_ORDER = "INSERT_SCHEDULE";
+    private final static String SELECT_REQUEST_ORDER = "SELECT_ALL_SCHEDULES";
+    private final static String DELETE_REQUEST_ORDER = "DELETE_SCHEDULE";
+    private final static String UPDATE_REQUEST_ORDER = "UPDATE_SCHEDULE";
 
     private final NetworkConfig networkConfig;
+    private final ObjectMapper objectMapper;
 
     public ScheduleService(NetworkConfig networkConfig) {
         this.networkConfig = networkConfig;
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
     }
 
     public NetworkConfig getNetworkConfig() {
@@ -48,15 +51,12 @@ public class ScheduleService {
 
         int scheduleId = 0;
         for (final Schedule schedule : schedules.getSchedules()) {
-            final ObjectMapper objectMapper = new ObjectMapper();
             final String jsonifiedSchedule = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(schedule);
-            logger.trace("Schedule with its JSON face: {}", jsonifiedSchedule);
             final String requestId = UUID.randomUUID().toString();
             final Request request = new Request();
             request.setRequestId(requestId);
-            request.setRequestOrder(insertRequestOrder);
+            request.setRequestOrder(INSERT_REQUEST_ORDER);
             request.setRequestContent(jsonifiedSchedule);
-            objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
             final byte[] requestBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(request);
 
             final InsertScheduleClientRequest clientRequest = new InsertScheduleClientRequest(
@@ -74,7 +74,7 @@ public class ScheduleService {
                 logger.error("Error in thread {}: {}",
                         clientRequest.getThreadName(),
                         lastException.getMessage());
-            } else {
+            } else if (logger.isDebugEnabled()) {
                 logger.debug("Thread {} complete : {} --> {}",
                         clientRequest.getThreadName(),
                         schedule.getTrip(),
@@ -94,14 +94,16 @@ public class ScheduleService {
     public Schedules selectSchedules() throws InterruptedException, IOException {
         int birthdate = 0;
         final Deque<ClientRequest> clientRequests = new ArrayDeque<>();
-        final ObjectMapper objectMapper = new ObjectMapper();
         final String requestId = UUID.randomUUID().toString();
         final Request request = new Request();
         request.setRequestId(requestId);
-        request.setRequestOrder(selectRequestOrder);
-        objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
+        request.setRequestOrder(SELECT_REQUEST_ORDER);
         final byte[] requestBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(request);
-        LoggingUtils.logDataMultiLine(logger, Level.TRACE, requestBytes);
+        
+        if (logger.isTraceEnabled()) {
+            LoggingUtils.logDataMultiLine(logger, Level.TRACE, requestBytes);
+        }
+        
         final SelectAllSchedulesClientRequest clientRequest = new SelectAllSchedulesClientRequest(
                 networkConfig,
                 birthdate++, request, null, requestBytes);
@@ -110,7 +112,9 @@ public class ScheduleService {
         if (!clientRequests.isEmpty()) {
             final ClientRequest joinedClientRequest = clientRequests.pop();
             joinedClientRequest.join();
-            logger.debug("Thread {} complete.", joinedClientRequest.getThreadName());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Thread {} complete.", joinedClientRequest.getThreadName());
+            }
             return (Schedules) joinedClientRequest.getResult();
         } else {
             logger.error("No schedules found");
@@ -118,63 +122,59 @@ public class ScheduleService {
         }
     }
 
-    public void deleteSchedule(int scheduleId) throws InterruptedException, IOException {
-        final ObjectMapper objectMapper = new ObjectMapper();
+    /**
+     * Sends a schedule-related request to the server
+     * 
+     * @param scheduleId The ID of the schedule
+     * @param requestOrder The request order (DELETE_SCHEDULE or UPDATE_SCHEDULE)
+     * @param requestClass The client request class to instantiate
+     * @return The result of the operation as String
+     * @throws InterruptedException If the thread is interrupted
+     * @throws IOException If an I/O error occurs
+     */
+    private String sendScheduleRequest(int scheduleId, String requestOrder, 
+            Class<? extends ClientRequest> requestClass) throws InterruptedException, IOException {
+        
         final String requestId = UUID.randomUUID().toString();
         final Request request = new Request();
         request.setRequestId(requestId);
-        request.setRequestOrder(deleteRequestOrder);
+        request.setRequestOrder(requestOrder);
 
         String jsonContent = "{\"id\":" + scheduleId + "}";
         request.setRequestContent(jsonContent);
 
-        objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
         final byte[] requestBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(request);
-
-        final DeleteScheduleClientRequest clientRequest = new DeleteScheduleClientRequest(
-                networkConfig, 0, request, scheduleId, requestBytes);
-
-        logger.debug("Sending delete request for scheduleId: {}", scheduleId);
-        logger.debug("Request content: {}", jsonContent);
-        clientRequest.join();
-
-        if (clientRequest.getException() != null) {
-            logger.error("Error deleting schedule: {}", clientRequest.getException().getMessage());
-            throw new IOException("Error deleting schedule: " + clientRequest.getException().getMessage(),
-                    clientRequest.getException());
-        }
-
-        String result = (String) clientRequest.getResult();
-        logger.debug("Delete schedule result: {}", result);
-    }
-
-    public void UpdateSchedule(int scheduleId, boolean stop) throws InterruptedException, IOException {
-        final ObjectMapper objectMapper = new ObjectMapper();
-        final String requestId = UUID.randomUUID().toString();
-        final Request request = new Request();
-        request.setRequestId(requestId);
-        request.setRequestOrder(updateRequestOrder);
-
-        String jsonContent = "{\"id\":" + scheduleId + ", \"stop\":" + stop + "}";
-        request.setRequestContent(jsonContent);
-
-        objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
-        final byte[] requestBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(request);
-
+        
+        ClientRequest clientRequest;
         Schedule dummySchedule = new Schedule();
         dummySchedule.setId(scheduleId);
-
-        final UpdateScheduleClientRequest clientRequest = new UpdateScheduleClientRequest(
-                networkConfig, 0, request, dummySchedule, requestBytes);
+        
+        if (requestClass.equals(DeleteScheduleClientRequest.class)) {
+            clientRequest = new DeleteScheduleClientRequest(
+                    networkConfig, 0, request, scheduleId, requestBytes);
+        } else if (requestClass.equals(UpdateScheduleClientRequest.class)) {
+            clientRequest = new UpdateScheduleClientRequest(
+                    networkConfig, 0, request, dummySchedule, requestBytes);
+        } else {
+            throw new IllegalArgumentException("Unsupported request class: " + requestClass.getName());
+        }
 
         clientRequest.join();
 
         if (clientRequest.getException() != null) {
-            throw new IOException("Error updating schedule status: " + clientRequest.getException().getMessage(),
+            String operation = requestClass.equals(DeleteScheduleClientRequest.class) ? "deleting" : "updating";
+            throw new IOException("Error " + operation + " schedule: " + clientRequest.getException().getMessage(),
                     clientRequest.getException());
         }
 
-        String result = (String) clientRequest.getResult();
-        logger.debug("Update schedule status result: {}", result);
+        return (String) clientRequest.getResult();
+    }
+
+    public void deleteSchedule(int scheduleId) throws InterruptedException, IOException {
+        sendScheduleRequest(scheduleId, DELETE_REQUEST_ORDER, DeleteScheduleClientRequest.class);
+    }
+
+    public void updateSchedule(int scheduleId) throws InterruptedException, IOException {
+        sendScheduleRequest(scheduleId, UPDATE_REQUEST_ORDER, UpdateScheduleClientRequest.class);
     }
 }
