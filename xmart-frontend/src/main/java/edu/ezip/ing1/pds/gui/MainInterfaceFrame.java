@@ -30,6 +30,9 @@ public class MainInterfaceFrame extends JFrame {
     private static final Color ALERT_COLOR = new Color(231, 76, 60);
     public static final Color TABLE_HEADER_COLOR = new Color(52, 73, 94);
     public static final Color TABLE_ALTERNATE_ROW = new Color(245, 245, 245);
+    public static final Color SUCCESS_COLOR = new Color(46, 204, 113);
+    public static final Color ACCENT_COLOR = new Color(231, 76, 60);
+    public static final Color REFRESH_BTN_COLOR = MainInterfaceFrame.TABLE_HEADER_COLOR;
 
     private JPanel mainContentPanel;
     private JPanel rightBottomNavPanel;

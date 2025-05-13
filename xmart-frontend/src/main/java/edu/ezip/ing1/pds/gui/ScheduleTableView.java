@@ -60,19 +60,19 @@ public class ScheduleTableView {
 
         List<JButton> buttons = new ArrayList<>();
 
-        JButton addButton = MainInterfaceFrame.createActionButton("Ajouter un horaire", SUCCESS_COLOR);
+        JButton addButton = MainInterfaceFrame.createButton("Ajouter un horaire", MainInterfaceFrame.SUCCESS_COLOR);
         addButton.addActionListener(e -> openAddScheduleDialog());
         buttons.add(addButton);
 
-        JButton editButton = MainInterfaceFrame.createActionButton("Modifier", PRIMARY_COLOR);
+        JButton editButton = MainInterfaceFrame.createButton("Modifier", MainInterfaceFrame.PRIMARY_COLOR);
         editButton.addActionListener(e -> openEditScheduleDialog());
         buttons.add(editButton);
 
-        JButton deleteButton = MainInterfaceFrame.createActionButton("Supprimer", ACCENT_COLOR);
+        JButton deleteButton = MainInterfaceFrame.createButton("Supprimer", MainInterfaceFrame.ACCENT_COLOR);
         deleteButton.addActionListener(e -> deleteSchedule());
         buttons.add(deleteButton);
 
-        JButton refreshButton = MainInterfaceFrame.createActionButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
+        JButton refreshButton = MainInterfaceFrame.createButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
         refreshButton.addActionListener(e -> refreshScheduleData());
         buttons.add(refreshButton);
 
