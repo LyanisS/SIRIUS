@@ -37,9 +37,9 @@ CREATE TABLE alert (
     train_id INT NOT NULL REFERENCES train(train_id)
 );
 
-INSERT INTO alert_gravity (alert_gravity_type) VALUES ('Faible');
-INSERT INTO alert_gravity (alert_gravity_type) VALUES ('Moyen');
-INSERT INTO alert_gravity (alert_gravity_type) VALUES ('Élevé');
+INSERT INTO alert_gravity (alert_gravity_type) VALUES ('Info');
+INSERT INTO alert_gravity (alert_gravity_type) VALUES ('Avertissement');
+INSERT INTO alert_gravity (alert_gravity_type) VALUES ('Critique');
 
 INSERT INTO station (station_name, station_sort) VALUES ('POSE', 1);
 INSERT INTO station (station_name, station_sort) VALUES ('JASM', 2);

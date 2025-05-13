@@ -5,10 +5,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.Time;
@@ -47,23 +43,15 @@ public class ScheduleTableView {
     private DefaultTableModel tableModel;
     private final ScheduleService service;
 
-    private static final Color PRIMARY_COLOR = new Color(41, 128, 185);
-    private static final Color SECONDARY_COLOR = new Color(52, 152, 219);
-    private static final Color ACCENT_COLOR = new Color(231, 76, 60);
-    private static final Color BACKGROUND_COLOR = new Color(236, 240, 241);
-    private static final Color TEXT_COLOR = new Color(44, 62, 80);
-    private static final Color TABLE_HEADER_COLOR = new Color(52, 73, 94);
-    private static final Color TABLE_ALTERNATE_ROW = new Color(245, 245, 245);
-    private static final Color SUCCESS_COLOR = new Color(46, 204, 113);
 
     public ScheduleTableView(MainInterfaceFrame frame) {
         this.frame = frame;
-        this.frame.setTitle("Gestion du planning des trains - Système de Contrôle");
-        this.frame.getTableJPanel().removeAll();
+        this.frame.setTitle("Gestion du planning des trains");
+        this.frame.getMainContentPanel().removeAll();
 
         createStyledTable();
 
-        JPanel tablePanel = this.frame.getTableJPanel();
+        JPanel tablePanel = this.frame.getMainContentPanel();
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -94,36 +82,6 @@ public class ScheduleTableView {
         this.refreshScheduleData();
     }
 
-    private JPanel createHeaderPanel() {
-        JPanel headerPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gp = new GradientPaint(0, 0, PRIMARY_COLOR, getWidth(), 0, SECONDARY_COLOR);
-                g2d.setPaint(gp);
-                g2d.fillRect(0, 0, getWidth(), getHeight());
-            }
-        };
-        headerPanel.setLayout(new BorderLayout());
-        headerPanel.setPreferredSize(new Dimension(0, 60));
-
-        JLabel titleLabel = new JLabel("Gestion du Planning");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        titleLabel.setForeground(Color.WHITE);
-        titleLabel.setBorder(new EmptyBorder(0, 20, 0, 0));
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-
-        JLabel subtitleLabel = new JLabel("Système de Contrôle Ferroviaire");
-        subtitleLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        subtitleLabel.setForeground(new Color(255, 255, 255, 200));
-        subtitleLabel.setBorder(new EmptyBorder(0, 0, 0, 20));
-        headerPanel.add(subtitleLabel, BorderLayout.EAST);
-
-        return headerPanel;
-    }
-
     private void createStyledTable() {
         String[] columnNames = {
             "ID Horaire",
@@ -146,11 +104,11 @@ public class ScheduleTableView {
                 Component comp = super.prepareRenderer(renderer, row, column);
 
                 if (!isRowSelected(row)) {
-                    comp.setBackground(row % 2 == 0 ? Color.WHITE : TABLE_ALTERNATE_ROW);
+                    comp.setBackground(row % 2 == 0 ? Color.WHITE : MainInterfaceFrame.TABLE_ALTERNATE_ROW);
                 } else {
                     comp.setBackground(
-                            new Color(PRIMARY_COLOR.getRed(), PRIMARY_COLOR.getGreen(), PRIMARY_COLOR.getBlue(), 80));
-                    comp.setForeground(TEXT_COLOR.darker());
+                            new Color(MainInterfaceFrame.PRIMARY_COLOR.getRed(), MainInterfaceFrame.PRIMARY_COLOR.getGreen(), MainInterfaceFrame.PRIMARY_COLOR.getBlue(), 80));
+                    comp.setForeground(MainInterfaceFrame.TEXT_COLOR.darker());
                 }
 
                 return comp;
@@ -161,8 +119,8 @@ public class ScheduleTableView {
         table.setIntercellSpacing(new Dimension(10, 5));
         table.setGridColor(new Color(230, 230, 230));
         table.setSelectionBackground(
-                new Color(PRIMARY_COLOR.getRed(), PRIMARY_COLOR.getGreen(), PRIMARY_COLOR.getBlue(), 100));
-        table.setSelectionForeground(TEXT_COLOR.darker());
+                new Color(MainInterfaceFrame.PRIMARY_COLOR.getRed(), MainInterfaceFrame.PRIMARY_COLOR.getGreen(), MainInterfaceFrame.PRIMARY_COLOR.getBlue(), 100));
+        table.setSelectionForeground(MainInterfaceFrame.TEXT_COLOR.darker());
         table.setShowVerticalLines(false);
         table.setFillsViewportHeight(true);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -178,7 +136,7 @@ public class ScheduleTableView {
         });
 
         JTableHeader header = table.getTableHeader();
-        header.setBackground(TABLE_HEADER_COLOR);
+        header.setBackground(MainInterfaceFrame.TABLE_HEADER_COLOR);
         header.setForeground(Color.WHITE);
         header.setFont(new Font("Arial", Font.BOLD, 12));
         header.setBorder(null);
@@ -231,23 +189,21 @@ public class ScheduleTableView {
     }
 
     private void openAddScheduleDialog() {
-        MainInterfaceFrame.styleDialogUIComponents();
-
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(BACKGROUND_COLOR);
+        panel.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         JLabel titleLabel = new JLabel("Ajouter un nouvel horaire");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        titleLabel.setForeground(TEXT_COLOR);
+        titleLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
         JLabel datetimeLabel = new JLabel("Date/heure (yyyy-MM-dd HH:mm:ss):");
         datetimeLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        datetimeLabel.setForeground(TEXT_COLOR);
+        datetimeLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
         datetimeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(datetimeLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
@@ -260,7 +216,7 @@ public class ScheduleTableView {
 
         JLabel stopLabel = new JLabel("Arrêt ?");
         stopLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        stopLabel.setForeground(TEXT_COLOR);
+        stopLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
         stopLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(stopLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
@@ -273,7 +229,7 @@ public class ScheduleTableView {
 
         JLabel cdvLabel = new JLabel("ID CDV:");
         cdvLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        cdvLabel.setForeground(TEXT_COLOR);
+        cdvLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
         cdvLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(cdvLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
@@ -286,7 +242,7 @@ public class ScheduleTableView {
 
         JLabel tripLabel = new JLabel("ID Trajet:");
         tripLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        tripLabel.setForeground(TEXT_COLOR);
+        tripLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
         tripLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(tripLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
@@ -334,8 +290,6 @@ public class ScheduleTableView {
                 this.frame.showWarningDialog("Erreur!", "Il faut remplir tous les champs!");
             }
         }
-
-        MainInterfaceFrame.resetDialogUIComponents();
     }
 
     private void openEditScheduleDialog() {
@@ -347,27 +301,25 @@ public class ScheduleTableView {
             return;
         }
 
-        MainInterfaceFrame.styleDialogUIComponents();
-
         int scheduleId = (int) tableModel.getValueAt(selectedRow, 0);
         String currentDatetime = (String) tableModel.getValueAt(selectedRow, 3);
         boolean currentStop = "Oui".equals(tableModel.getValueAt(selectedRow, 4));
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(BACKGROUND_COLOR);
+        panel.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         JLabel titleLabel = new JLabel("Modifier l'horaire #" + scheduleId);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        titleLabel.setForeground(TEXT_COLOR);
+        titleLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
         JLabel datetimeLabel = new JLabel("Date/heure (yyyy-MM-dd HH:mm:ss):");
         datetimeLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        datetimeLabel.setForeground(TEXT_COLOR);
+        datetimeLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
         datetimeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(datetimeLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
@@ -380,7 +332,7 @@ public class ScheduleTableView {
 
         JLabel stopLabel = new JLabel("Arrêt ?");
         stopLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        stopLabel.setForeground(TEXT_COLOR);
+        stopLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
         stopLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(stopLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
@@ -422,8 +374,6 @@ public class ScheduleTableView {
                 this.frame.showWarningDialog("Erreur", "La date/heure ne peut pas être vide.");
             }
         }
-
-        MainInterfaceFrame.resetDialogUIComponents();
     }
 
     private void deleteSchedule() {

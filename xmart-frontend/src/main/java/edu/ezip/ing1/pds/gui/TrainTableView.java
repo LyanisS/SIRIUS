@@ -28,13 +28,13 @@ import edu.ezip.ing1.pds.services.StationService;
 
 
 public class TrainTableView {
-    private MainTemplate mainTemplate;
+    private MainInterfaceFrame frame;
     private JTable table;
     private DefaultTableModel tableModel;
     private TrainService trainService;
 
-    public TrainTableView(MainTemplate template) {
-        this.mainTemplate = template;
+    public TrainTableView(MainInterfaceFrame frame) {
+        this.frame = frame;
         NetworkConfig networkConfig = ConfigLoader.loadConfig(NetworkConfig.class, "network.yaml");
         this.trainService = new TrainService(networkConfig);
         initializeTable();
@@ -76,7 +76,7 @@ public class TrainTableView {
                 }
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(mainTemplate,
+            JOptionPane.showMessageDialog(this.frame,
                 "Erreur lors du chargement des trains: " + e.getMessage(),
                 "Erreur",
                 JOptionPane.ERROR_MESSAGE);
@@ -85,7 +85,7 @@ public class TrainTableView {
     }
 
     private void displayTable() {
-        JPanel contentPanel = mainTemplate.getMainContentPanel();
+        JPanel contentPanel = this.frame.getMainContentPanel();
         contentPanel.removeAll();
         contentPanel.setLayout(new BorderLayout());
 
