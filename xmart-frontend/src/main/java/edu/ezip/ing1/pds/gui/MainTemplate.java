@@ -36,6 +36,7 @@ public class MainTemplate extends JFrame {
     private JLabel timeLabel;
     
     private JButton refreshButton;
+    private String currentView = "traffic"; 
     
     public MainTemplate() {
         setTitle("Système de Contrôle Ferroviaire");
@@ -283,11 +284,18 @@ public class MainTemplate extends JFrame {
     
     private void setupNavigationListeners() {
         trafficBtn.addActionListener(e -> {
+            currentView = "traffic";
             updateRightNavigation("traffic");
             new TrainTableView(this);
         });
-        scheduleBtn.addActionListener(e -> updateRightNavigation("schedule"));
-        alertsBtn.addActionListener(e -> updateRightNavigation("alerts"));
+        scheduleBtn.addActionListener(e -> {
+            currentView = "schedule";
+            updateRightNavigation("schedule");
+        });
+        alertsBtn.addActionListener(e -> {
+            currentView = "alerts";
+            updateRightNavigation("alerts");
+        });
     }
     
     private void updateRightNavigation(String section) {
@@ -400,7 +408,14 @@ public class MainTemplate extends JFrame {
     }
     
     public void refreshAll() {
-        refreshTrainTable();
+       
+        if (currentView.equals("traffic")) {
+            refreshTrainTable();
+        } else if (currentView.equals("schedule")) {
+           
+        } else if (currentView.equals("alerts")) {
+            
+        }
     }
     
     public static void main(String[] args) {
