@@ -71,9 +71,8 @@ public class ScheduleService {
                         clientRequest.getThreadName(),
                         lastException.getMessage());
             } else {
-                logger.debug("Thread {} complete : {} {} --> {}",
+                logger.debug("Thread {} complete : {} --> {}",
                         clientRequest.getThreadName(),
-                        schedule.getTrackElement(),
                         schedule.getTrip(),
                         clientRequest.getResult());
             }
@@ -113,21 +112,6 @@ public class ScheduleService {
             logger.error("No schedules found");
             return null;
         }
-    }
-
-    public boolean isTrackElementInUse(int trackElementId) throws InterruptedException, IOException {
-        Schedules schedules = selectSchedules();
-
-        if (schedules != null && schedules.getSchedules() != null) {
-            for (Schedule schedule : schedules.getSchedules()) {
-                if (schedule.getTrackElement() != null
-                        && schedule.getTrackElement().getId() == trackElementId) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     public void deleteSchedule(int scheduleId) throws InterruptedException, IOException {

@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.ezip.ing1.pds.business.dto.Alert;
 import edu.ezip.ing1.pds.business.dto.AlertGravity;
 import edu.ezip.ing1.pds.business.dto.Alerts;
-import edu.ezip.ing1.pds.business.dto.Person;
 import edu.ezip.ing1.pds.business.dto.Schedule;
 import edu.ezip.ing1.pds.business.dto.Schedules;
 import edu.ezip.ing1.pds.business.dto.Station;
@@ -32,7 +31,7 @@ public class XMartCityService {
         SELECT_ALL_TRAINS("SELECT train_id FROM train"),
         INSERT_TRAIN("INSERT INTO train () VALUES ();"),
         DELETE_TRAIN("DELETE FROM train WHERE train_id = ?;"),
-        SELECT_ALL_SCHEDULES("SELECT schedule_id, schedule_time_arrival, schedule_time_departure, station_name, trip_id, train_id, person_login, person_first_name, person_last_name FROM schedule JOIN station USING (station_name) JOIN trip USING (trip_id) JOIN train USING (train_id) JOIN person USING (person_login);"),
+        SELECT_ALL_SCHEDULES("SELECT schedule_id, schedule_time_arrival, schedule_time_departure, station_name, trip_id, train_id FROM schedule JOIN station USING (station_name) JOIN trip USING (trip_id) JOIN train USING (train_id);"),
         INSERT_SCHEDULE("INSERT INTO schedule (schedule_time_arrival, schedule_time_departure, station_name, trip_id) VALUES (?, ?, ?, ?);"),
         UPDATE_SCHEDULE("UPDATE schedule SET schedule_time_arrival = ?, schedule_time_departure = ?, station_name = ? WHERE schedule_id = ?;"),
         DELETE_SCHEDULE("DELETE FROM schedule WHERE schedule_id = ?;"),
@@ -192,15 +191,7 @@ public class XMartCityService {
                             res.getTime("schedule_time_arrival"),
                             res.getTime("schedule_time_departure"),
                             new Station(res.getString("station_name")),
-                            new Trip(
-                                    res.getInt("trip_id"),
-                                    new Train(res.getInt("train_id")),
-                                    new Person(
-                                            res.getString("person_login"),
-                                            res.getString("person_last_name"),
-                                            res.getString("person_first_name")
-                                    )
-                            )
+                            new Trip(res.getInt("trip_id"), new Train(res.getInt("train_id")))
                     )
             );
         }

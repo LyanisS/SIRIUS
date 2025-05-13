@@ -138,7 +138,7 @@ public class AlertTableView {
                     Object[] row = {
                             alert.getId(),
                             alert.getMessage(),
-                            alert.getTimestamp().toString(),
+                            alert.getTime().toString(),
                             alert.getGravity().getType(),
                             alert.getTrain().getId()
                     };

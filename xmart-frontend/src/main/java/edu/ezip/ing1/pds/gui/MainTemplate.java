@@ -5,7 +5,6 @@ import java.awt.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.awt.event.*;
-import edu.ezip.ing1.pds.business.dto.Train;
 import edu.ezip.ing1.pds.client.commons.NetworkConfig;
 import edu.ezip.ing1.pds.services.TrainService;
 import edu.ezip.ing1.pds.client.commons.ConfigLoader;

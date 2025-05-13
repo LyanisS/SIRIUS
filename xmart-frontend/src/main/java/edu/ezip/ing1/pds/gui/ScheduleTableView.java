@@ -11,6 +11,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,6 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
-import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -37,7 +37,6 @@ import javax.swing.table.TableCellRenderer;
 
 import edu.ezip.ing1.pds.business.dto.Schedule;
 import edu.ezip.ing1.pds.business.dto.Schedules;
-import edu.ezip.ing1.pds.business.dto.TrackElement;
 import edu.ezip.ing1.pds.business.dto.Trip;
 import edu.ezip.ing1.pds.services.ScheduleService;
 
@@ -209,16 +208,16 @@ public class ScheduleTableView {
             if (schedules != null && schedules.getSchedules() != null) {
                 for (Schedule schedule : schedules.getSchedules()) {
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    String formattedDate = schedule.getTimestamp() != null
-                            ? dateFormat.format(schedule.getTimestamp())
+                    String formattedDate = schedule.getTimeArrival() != null
+                            ? dateFormat.format(schedule.getTimeArrival())
                             : "";
 
                     Object[] row = {
                         schedule.getId(),
                         schedule.getTrip().getId(),
-                        schedule.getTrackElement().getId(),
+                        "-",
                         formattedDate,
-                        schedule.getStop() ? "Oui" : "Non"
+                        "-"
                     };
                     tableModel.addRow(row);
                 }
@@ -315,11 +314,8 @@ public class ScheduleTableView {
                     Schedule newSchedule = new Schedule();
 
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    newSchedule.setTimestamp(new java.sql.Timestamp(dateFormat.parse(scheduleDatetime).getTime()));
+                    newSchedule.setTimeArrival(new Time(dateFormat.parse(scheduleDatetime).getTime()));
 
-                    newSchedule.setStop("Oui".equals(scheduleStop));
-
-                    newSchedule.setTrackElement(new TrackElement(Integer.parseInt(trackElementId)));
                     newSchedule.setTrip(new Trip(Integer.parseInt(tripId)));
 
                     Schedules schedules = new Schedules();
@@ -410,15 +406,10 @@ public class ScheduleTableView {
                 try {
                     Schedule updatedSchedule = new Schedule();
                     updatedSchedule.setId(scheduleId);
-                    String res = "Oui";
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    updatedSchedule.setTimestamp(new java.sql.Timestamp(dateFormat.parse(scheduleDatetime).getTime()));
-                    updatedSchedule.setStop(res.equals(scheduleStop));
-                    System.out.println("------------------------------------------------------------------------------");
-                    System.out.println(updatedSchedule.getStop());
-                    System.out.println("------------------------------------------------------------------------");
+                    updatedSchedule.setTimeArrival(new Time(dateFormat.parse(scheduleDatetime).getTime()));
 
-                    this.service.UpdateSchedule(scheduleId, updatedSchedule.getStop());
+                    this.service.UpdateSchedule(scheduleId, true);
 
                     refreshScheduleData();
 
