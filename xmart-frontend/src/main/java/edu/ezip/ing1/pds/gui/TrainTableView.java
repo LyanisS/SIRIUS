@@ -52,7 +52,7 @@ public class TrainTableView {
         table.setRowHeight(30);
         table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
         table.getTableHeader().setBackground(new Color(52, 152, 219));
-        table.getTableHeader().setForeground(Color.WHITE);
+        table.getTableHeader().setForeground(Color.BLUE);
     
         loadTrainData();
     }
@@ -82,7 +82,7 @@ public class TrainTableView {
         contentPanel.removeAll();
         contentPanel.setLayout(new BorderLayout());
 
-      
+    
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         contentPanel.add(scrollPane, BorderLayout.CENTER);

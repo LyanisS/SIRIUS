@@ -35,6 +35,8 @@ public class MainTemplate extends JFrame {
 
     private JLabel timeLabel;
     
+    private JButton refreshButton;
+    
     public MainTemplate() {
         setTitle("Système de Contrôle Ferroviaire");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -57,6 +59,9 @@ public class MainTemplate extends JFrame {
     
         startTimeUpdate();
         
+        //@ Ajout du timer d'actualisation automatique toutes les 40s
+        Timer autoRefreshTimer = new Timer(40000, e -> refreshAll());
+        autoRefreshTimer.start();
         
         setSize(1200, 800);
         setLocationRelativeTo(null);
@@ -83,47 +88,24 @@ public class MainTemplate extends JFrame {
         timeLabel.setFont(new Font("Arial", Font.BOLD, 24));
         timeLabel.setForeground(Color.WHITE);
         
-        JLabel profileLabel = new JLabel("Profile");
-        profileLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        profileLabel.setForeground(Color.WHITE);
-        
         leftSection.add(timeLabel);
-        leftSection.add(profileLabel);
         
     
         JPanel rightSection = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 15));
         rightSection.setOpaque(false);
         
-        alertButton = new JButton("Messages d'alarmes");
-        alertButton.setFont(new Font("Arial", Font.BOLD, 16));
-        alertButton.setForeground(Color.WHITE);
-        alertButton.setContentAreaFilled(false);
-        alertButton.setBorderPainted(false);
-        alertButton.setFocusPainted(false);
-        alertButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-    
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        buttonPanel.setOpaque(false);
-        
-        JPanel indicator = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(ALERT_COLOR);
-                g2d.fillOval(0, 0, 10, 10);
-            }
-        };
-        indicator.setPreferredSize(new Dimension(10, 10));
-        indicator.setOpaque(false);
-        
-        buttonPanel.add(indicator);
-        buttonPanel.add(alertButton);
-        rightSection.add(buttonPanel);
-        
-        alertButton.addActionListener(e -> toggleAlertCard());
+        // @ bouton Actualiser
+        refreshButton = new JButton("\u27F3 Actualiser");
+        refreshButton.setFont(new Font("Dialog", Font.BOLD, 14));
+        refreshButton.setForeground(Color.WHITE);
+        refreshButton.setBackground(new Color(41, 128, 185));
+        refreshButton.setFocusPainted(false);
+        refreshButton.setBorderPainted(false);
+        refreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        refreshButton.setHorizontalTextPosition(SwingConstants.RIGHT);
+        refreshButton.setIconTextGap(8);
+        refreshButton.addActionListener(e -> refreshAll());
+        rightSection.add(refreshButton);
         
         topPanel.add(leftSection, BorderLayout.WEST);
         topPanel.add(rightSection, BorderLayout.EAST);
@@ -167,81 +149,8 @@ public class MainTemplate extends JFrame {
         alertCard.setVisible(false);
     }
     
-    private enum AlertSeverity {
-        INFO(new Color(52, 152, 219), "Info"),
-        WARNING(new Color(243, 156, 18), "Attention"),
-        CRITICAL(new Color(231, 76, 60), "Critique");
-        
-        final Color color;
-        final String label;
-        
-        AlertSeverity(Color color, String label) {
-            this.color = color;
-            this.label = label;
-        }
-    }
-    
-    private void addAlertItem(String message, AlertSeverity severity) {
-        JPanel item = new JPanel(new BorderLayout(10, 0));
-        item.setBackground(new Color(249, 249, 249));
-        item.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 3, 0, 0, severity.color),
-            BorderFactory.createEmptyBorder(12, 15, 12, 15)
-        ));
-        
-     
-        JPanel leftContent = new JPanel(new BorderLayout(10, 5));
-        leftContent.setOpaque(false);
-   
-        JLabel severityLabel = new JLabel(severity.label);
-        severityLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        severityLabel.setForeground(severity.color);
-        severityLabel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(severity.color),
-            BorderFactory.createEmptyBorder(2, 6, 2, 6)
-        ));
-        
 
-        JLabel messageLabel = new JLabel(message);
-        messageLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        messageLabel.setForeground(TEXT_COLOR);
-        
-        leftContent.add(severityLabel, BorderLayout.NORTH);
-        leftContent.add(messageLabel, BorderLayout.CENTER);
-        
-       
-        JPanel rightContent = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-   
-        JLabel timeLabel = new JLabel(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
-        timeLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        timeLabel.setForeground(new Color(150, 150, 150));
-        
-        JButton detailsBtn = createActionButton("Détails");
-        JButton acknowledgeBtn = createActionButton("Acquitter");
-        
-        rightContent.add(timeLabel);
-        rightContent.add(detailsBtn);
-        rightContent.add(acknowledgeBtn);
-        
-        item.add(leftContent, BorderLayout.CENTER);
-        item.add(rightContent, BorderLayout.EAST);
-        
- 
-        item.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                item.setBackground(new Color(245, 245, 245));
-            }
-            
-            @Override
-            public void mouseExited(MouseEvent e) {
-                item.setBackground(new Color(249, 249, 249));
-            }
-        });
-        
-        alertCard.add(item);
-        alertCard.add(Box.createVerticalStrut(5));
-    }
+
     
     private JButton createActionButton(String text) {
         JButton button = new JButton(text);
@@ -387,7 +296,6 @@ public class MainTemplate extends JFrame {
         switch (section) {
             case "traffic":
                 JButton addTrainBtn = createNavButton("Ajouter Train");
-                JButton modifyStatusBtn = createNavButton("Modifier Statut");
                 JButton showRoutesBtn = createNavButton("Afficher Trajets");
                 JButton deleteTrainBtn = createNavButton("Supprimer Train");
                 
@@ -412,8 +320,8 @@ public class MainTemplate extends JFrame {
                                     showSuccessDialog("Suppression réussie", 
                                         "Le train " + trainId + " a été supprimé avec succès");
                                 } catch (Exception ex) {
-                                    showErrorDialog(ex, "Erreur de suppression", 
-                                        "Une erreur est survenue lors de la suppression du train " + trainId);
+                                    showErrorDialog(ex, "Erreur", 
+                                        "Une erreur est survenue lors de la suppression du train");
                                 }
                             }
                         } else {
@@ -424,7 +332,6 @@ public class MainTemplate extends JFrame {
                 });
                 
                 rightBottomNavPanel.add(addTrainBtn);
-                rightBottomNavPanel.add(modifyStatusBtn);
                 rightBottomNavPanel.add(showRoutesBtn);
                 rightBottomNavPanel.add(deleteTrainBtn);
                 break;
@@ -490,6 +397,10 @@ public class MainTemplate extends JFrame {
         if (mainContentPanel.getComponents().length > 0) {
             new TrainTableView(this);
         }
+    }
+    
+    public void refreshAll() {
+        refreshTrainTable();
     }
     
     public static void main(String[] args) {
