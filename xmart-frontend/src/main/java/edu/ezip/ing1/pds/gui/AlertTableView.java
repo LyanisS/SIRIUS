@@ -1,19 +1,31 @@
 package edu.ezip.ing1.pds.gui;
 
-import edu.ezip.ing1.pds.business.dto.Alert;
-import edu.ezip.ing1.pds.business.dto.Alerts;
-import edu.ezip.ing1.pds.services.AlertService;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
+
+import edu.ezip.ing1.pds.business.dto.Alert;
+import edu.ezip.ing1.pds.business.dto.Alerts;
+import edu.ezip.ing1.pds.services.AlertService;
 
 public class AlertTableView {
     private MainInterfaceFrame frame;
