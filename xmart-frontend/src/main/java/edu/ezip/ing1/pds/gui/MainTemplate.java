@@ -1,13 +1,43 @@
 package edu.ezip.ing1.pds.gui;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.awt.event.*;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JViewport;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.UIManager;
+
+import edu.ezip.ing1.pds.client.commons.ConfigLoader;
 import edu.ezip.ing1.pds.client.commons.NetworkConfig;
 import edu.ezip.ing1.pds.services.TrainService;
-import edu.ezip.ing1.pds.client.commons.ConfigLoader;
 
 public class MainTemplate extends JFrame {
     private static final Color PRIMARY_COLOR = new Color(41, 128, 185);
@@ -38,7 +68,11 @@ public class MainTemplate extends JFrame {
     private JButton refreshButton;
     private String currentView = "traffic"; 
     
+    private NetworkConfig networkConfig;
+    private ScheduleTableView scheduleTableView;
+    
     public MainTemplate() {
+        this.networkConfig = ConfigLoader.loadConfig(NetworkConfig.class, "network.yaml");
         setTitle("Système de Contrôle Ferroviaire");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
@@ -60,7 +94,6 @@ public class MainTemplate extends JFrame {
     
         startTimeUpdate();
         
-        //@ Ajout du timer d'actualisation automatique toutes les 40s
         Timer autoRefreshTimer = new Timer(40000, e -> refreshAll());
         autoRefreshTimer.start();
         
@@ -95,7 +128,6 @@ public class MainTemplate extends JFrame {
         JPanel rightSection = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 15));
         rightSection.setOpaque(false);
         
-        // @ bouton Actualiser
         refreshButton = new JButton("\u27F3 Actualiser");
         refreshButton.setFont(new Font("Dialog", Font.BOLD, 14));
         refreshButton.setForeground(Color.WHITE);
@@ -314,7 +346,7 @@ public class MainTemplate extends JFrame {
                 });
                 
                 deleteTrainBtn.addActionListener(e -> {
-                    TrainService service = new TrainService(ConfigLoader.loadConfig(NetworkConfig.class, "network.yaml"));
+                    TrainService service = new TrainService(networkConfig);
                     JTable trainTable = findTrainTable();
                     if (trainTable != null) {
                         int selectedRow = trainTable.getSelectedRow();
@@ -344,7 +376,19 @@ public class MainTemplate extends JFrame {
                 rightBottomNavPanel.add(deleteTrainBtn);
                 break;
             case "schedule":
-                rightBottomNavPanel.add(createNavButton("Ajouter Horaire"));
+                mainContentPanel.removeAll();
+                scheduleTableView = new ScheduleTableView(this);
+                mainContentPanel.add(scheduleTableView.getPanel());
+                mainContentPanel.revalidate();
+                mainContentPanel.repaint();
+                JButton addScheduleBtn = createNavButton("Ajouter Trajet");
+                addScheduleBtn.addActionListener(e -> {
+                    System.out.println("Clic sur Ajouter Trajet, instance scheduleTableView = " + scheduleTableView);
+                    if (scheduleTableView != null) {
+                        scheduleTableView.openAddScheduleDialog();
+                    }
+                });
+                rightBottomNavPanel.add(addScheduleBtn);
                 rightBottomNavPanel.add(createNavButton("Modifier Horaire"));
                 rightBottomNavPanel.add(createNavButton("Supprimer Horaire"));
                 break;
@@ -416,6 +460,10 @@ public class MainTemplate extends JFrame {
         } else if (currentView.equals("alerts")) {
             
         }
+    }
+    
+    public NetworkConfig getNetworkConfig() {
+        return this.networkConfig;
     }
     
     public static void main(String[] args) {
