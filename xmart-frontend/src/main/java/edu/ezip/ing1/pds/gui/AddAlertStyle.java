@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
-import java.sql.Timestamp;
+import java.sql.Time;
 
 public class AddAlertStyle extends JDialog {
     private final static Logger logger = LoggerFactory.getLogger("FrontEnd - AddAlertStyle");
@@ -110,7 +110,7 @@ public class AddAlertStyle extends JDialog {
         Train train = new Train();
         train.setId(trainId);
 
-        return new Alert(0, message, new Timestamp(System.currentTimeMillis()), gravity, train);
+        return new Alert(0, message, new Time(System.currentTimeMillis()), 0, gravity, train);
     }
 
     public void addAlert() {

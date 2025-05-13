@@ -3,43 +3,41 @@ package edu.ezip.ing1.pds.business.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
+import java.awt.*;
+
 @JsonRootName(value = "alert_gravity")
 public enum AlertGravity {
-    UNKNOWN(0, 0, "inconnu"),
-    LOW(1, 1, "Faible"),
-    MEDIUM(2, 2, "Moyen"),
-    HIGH(2, 3, "Élevé");
-
-    @JsonProperty("id")
-    private final int id;
-
-    @JsonProperty("level")
-    private final int level;
+    UNKNOWN("Inconnu"),
+    INFO( "Info"),
+    WARNING( "Avertissement", new Color(243, 156, 18)),
+    HIGH( "Critique", new Color(231, 76, 60));
 
     @JsonProperty("type")
     private final String type;
+    @JsonProperty("color")
+    private final Color color;
 
-    AlertGravity(int id, int level, String type) {
-        this.id = id;
-        this.level = level;
+    AlertGravity(String type, Color color) {
         this.type = type;
+        this.color = color;
     }
 
-    public int getId() {
-        return this.id;
-    }
-
-    public int getLevel() {
-        return this.level;
+    AlertGravity(String type) {
+        this.type = type;
+        this.color = new Color(52, 152, 219);
     }
 
     public String getType() {
         return this.type;
     }
 
-    public static AlertGravity getById(int id) {
+    public Color getColor() {
+        return this.color;
+    }
+
+    public static AlertGravity getByTypeName(String type) {
         for (AlertGravity ag : values()) {
-            if (ag.getId() == id)
+            if (ag.getType().equals(type))
                 return ag;
         }
         return UNKNOWN;
@@ -47,10 +45,6 @@ public enum AlertGravity {
 
     @Override
     public String toString() {
-        return "AlertGravity{" +
-                "id=" + this.id +
-                "level=" + this.level +
-                ", type=" + this.type +
-                '}';
+        return "AlertGravity{type=" + this.type + '}';
     }
 }

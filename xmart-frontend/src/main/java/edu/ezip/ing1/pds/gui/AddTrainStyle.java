@@ -2,144 +2,102 @@ package edu.ezip.ing1.pds.gui;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GradientPaint;
 import java.awt.RenderingHints;
-import java.awt.Container;
-import java.awt.Component;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.BorderFactory;
 import javax.swing.border.EmptyBorder;
+import javax.swing.SwingConstants;
 
 import edu.ezip.ing1.pds.business.dto.Train;
-import edu.ezip.ing1.pds.business.dto.TrackElement;
-import edu.ezip.ing1.pds.business.dto.TrainStatus;
-import edu.ezip.ing1.pds.business.dto.Trains;
-import edu.ezip.ing1.pds.business.dto.Station;
 import edu.ezip.ing1.pds.services.TrainService;
+import edu.ezip.ing1.pds.client.commons.NetworkConfig;
+import edu.ezip.ing1.pds.client.commons.ConfigLoader;
 
 public class AddTrainStyle extends JDialog {
-    private JComboBox<String> statusComboBox;
-    private JTextField trackElementIdField;
-    private JComboBox<String> stationComboBox;
     private boolean confirmed = false;
     private final TrainService service;
+    private final MainInterfaceFrame frame;
 
-    private final Map<String, Integer> stationMap = new HashMap<>();
+    public AddTrainStyle(MainInterfaceFrame frame) {
+        super(frame, "Ajouter un train", true);
+        this.service = new TrainService(ConfigLoader.loadConfig(NetworkConfig.class, "network.yaml"));
+        this.frame = frame;
 
-    private final Map<String, Integer> statusMap = new HashMap<>();
+    
+        setBackground(new Color(245, 245, 245));
+        getRootPane().setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true));
 
-    public AddTrainStyle(MainInterfaceFrame parent, TrainService service) {
-        super(parent, "Ajouter un train", true);
-        this.service = service;
+    
+        JPanel mainPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp = new GradientPaint(0, 0, new Color(255, 255, 255),
+                        0, getHeight(), new Color(240, 240, 240));
+                g2d.setPaint(gp);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        mainPanel.setBorder(new EmptyBorder(30, 40, 30, 40));
 
-        stationMap.put("POSE", 1);
-        stationMap.put("JASM", 2);
-        stationMap.put("TROC", 3);
-        stationMap.put("BONO", 4);
-        stationMap.put("STSD", 5);
-        stationMap.put("NATN", 6);
-        stationMap.put("MAMO", 7);
+    
+        JPanel messagePanel = new JPanel(new BorderLayout(0, 15));
+        messagePanel.setOpaque(false);
 
-        statusMap.put("EN_Circulation", 1);
-        statusMap.put("EN_MAINTENANCE", 2);
-        statusMap.put("GARE", 3);
+    
+        JLabel messageLabel = new JLabel("Voulez-vous ajouter un nouveau train ?");
+        messageLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        messageLabel.setForeground(new Color(44, 62, 80));
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        JPanel mainPanel = new JPanel(new GridLayout(3, 2, 10, 10));
+        JLabel descLabel = new JLabel("Un nouvel ID sera automatiquement attribué au train.");
+        descLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        descLabel.setForeground(new Color(127, 140, 141));
+        descLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        mainPanel.add(new JLabel("Statut:"));
-        statusComboBox = new JComboBox<>();
-        statusComboBox.addItem("EN_Circulation");
-        statusComboBox.addItem("GARE");
-        statusComboBox.addItem("EN_MAINTENANCE");
-        mainPanel.add(statusComboBox);
+        messagePanel.add(messageLabel, BorderLayout.NORTH);
+        messagePanel.add(descLabel, BorderLayout.CENTER);
+        mainPanel.add(messagePanel, BorderLayout.CENTER);
 
-        mainPanel.add(new JLabel("ID de l'élément de voie:"));
-        trackElementIdField = new JTextField(10);
-        mainPanel.add(trackElementIdField);
+    
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(new EmptyBorder(20, 0, 0, 0));
 
-        mainPanel.add(new JLabel("Station:"));
-        stationComboBox = new JComboBox<>();
-        for (String stationName : stationMap.keySet()) {
-            stationComboBox.addItem(stationName);
-        }
-        mainPanel.add(stationComboBox);
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton cancelButton = new JButton("Annuler");
-        JButton confirmButton = new JButton("Confirmer");
+        JButton cancelButton = MainInterfaceFrame.createButton("Annuler", new Color(231, 76, 60));
+        JButton confirmButton = MainInterfaceFrame.createButton("Confirmer", new Color(46, 204, 113));
 
         cancelButton.addActionListener(e -> dispose());
         confirmButton.addActionListener(e -> {
-            if (validateInputs()) {
-                confirmed = true;
-                dispose();
-            }
+            confirmed = true;
+            dispose();
         });
 
-        buttonPanel.add(cancelButton);
         buttonPanel.add(confirmButton);
+        buttonPanel.add(cancelButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
 
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(mainPanel, BorderLayout.CENTER);
-        getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
-        pack();
-        setLocationRelativeTo(parent);
-    }
 
-    private boolean validateInputs() {
-        try {
-            int trackElementId = Integer.parseInt(trackElementIdField.getText().trim());
-            if (trackElementId <= 0) {
-                JOptionPane.showMessageDialog(this,
-                        "L'ID de l'élément de voie doit être un nombre positif",
-                        "Erreur de validation",
-                        JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-
-            try {
-                if (service.isTrackElementInUse(trackElementId)) {
-                    JOptionPane.showMessageDialog(this,
-                            "L'élément de voie (ID: " + trackElementId + ") est déjà utilisé par un autre train\n\n" +
-                                    "Veuillez choisir un autre élément de voie.",
-                            "Élément de voie déjà utilisé",
-                            JOptionPane.WARNING_MESSAGE);
-                    return false;
-                }
-            } catch (Exception e) {
-
-                System.err.println("Error : " + e.getMessage());
-            }
-
-            return true;
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this,
-                    "L'ID de l'élément de voie doit être un nombre entier",
-                    "Erreur de validation",
-                    JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
+        setMinimumSize(new Dimension(450, 250));
+        setLocationRelativeTo(this.frame);
+        setResizable(false);
     }
 
     public boolean showDialog() {
@@ -147,83 +105,62 @@ public class AddTrainStyle extends JDialog {
         return confirmed;
     }
 
-    public Train getTrain() {
-        if (!confirmed)
-            return null;
-
-        TrainStatus status;
-        String statusName = (String) statusComboBox.getSelectedItem();
-        int statusId = statusMap.get(statusName);
-        status = TrainStatus.getById(statusId);
-
-        String stationName = (String) stationComboBox.getSelectedItem();
-        int stationId = stationMap.get(stationName);
-        Station station = new Station(stationId, stationName);
-
-        int trackElementId = Integer.parseInt(trackElementIdField.getText().trim());
-        TrackElement trackElement = new TrackElement(trackElementId);
-        trackElement.setStation(station);
-
-        return new Train(0, status, trackElement, station);
-    }
-
     public void addTrain() {
-        if (!confirmed)
-            return;
-
+        if (!confirmed) return;
+        
         try {
-            Train train = getTrain();
-            Trains trains = new Trains();
-            trains.add(train);
+            Train train = new Train();
+            this.service.insertTrain(train);
 
-            service.insertTrains(trains);
-            JOptionPane.showMessageDialog(this,
-                    "Train ajouté avec succès!",
-                    "Succès",
-                    JOptionPane.INFORMATION_MESSAGE);
+
+            JDialog successDialog = new JDialog(this.frame, "Succès", true);
+            successDialog.setLayout(new BorderLayout());
+            successDialog.getContentPane().setBackground(Color.WHITE);
+
+            JPanel contentPanel = new JPanel(new BorderLayout(0, 15));
+            contentPanel.setBackground(Color.WHITE);
+            contentPanel.setBorder(new EmptyBorder(25, 30, 25, 30));
+
+            JLabel messageLabel = new JLabel("Train ajouté avec succès !");
+            messageLabel.setFont(new Font("Arial", Font.BOLD, 16));
+            messageLabel.setForeground(new Color(46, 204, 113));
+            messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+            JButton okButton = MainInterfaceFrame.createButton("OK", new Color(46, 204, 113));
+            okButton.addActionListener(e -> successDialog.dispose());
+
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            buttonPanel.setBackground(Color.WHITE);
+            buttonPanel.add(okButton);
+
+            contentPanel.add(messageLabel, BorderLayout.CENTER);
+            contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+            successDialog.add(contentPanel);
+            successDialog.setMinimumSize(new Dimension(300, 200));
+            successDialog.setLocationRelativeTo(this.frame);
+            successDialog.setResizable(false);
+            successDialog.setVisible(true);
+
+            if (this.frame != null) {
+                this.frame.refreshTrainTable();
+            }
         } catch (Exception e) {
             String errorMessage = e.getMessage();
             String userFriendlyMessage;
 
-            if (errorMessage != null && (errorMessage.contains("Duplicate entry") ||
-                    errorMessage.contains("Un train est déjà associé à cet élément de voie"))) {
-                userFriendlyMessage = "Erreur: Un train est déjà associé à cet élément de voie (ID: " +
-                        trackElementIdField.getText().trim() + ").\n\n" +
-
-                        "Veuillez choisir un autre élément de voie.";
-
-                JOptionPane.showMessageDialog(this,
-                        userFriendlyMessage,
-                        "Élément de voie déjà utilisé",
-                        JOptionPane.WARNING_MESSAGE);
-            } else if (errorMessage != null && errorMessage.contains("ID error")) {
-                userFriendlyMessage = "Erreur: L'élément de voie spécifié (ID: " +
-                        trackElementIdField.getText().trim() + ") n'existe pas.\n\n" +
-                        "Veuillez entrer un ID d'élément de voie valide";
-
-                JOptionPane.showMessageDialog(this,
-                        userFriendlyMessage,
-                        "Élément de voie invalide",
-                        JOptionPane.ERROR_MESSAGE);
-            } else if (errorMessage != null && errorMessage.contains("Connection")) {
+            if (errorMessage != null && errorMessage.contains("Connection")) {
                 userFriendlyMessage = "Erreur de connexion au serveur.\n\n" +
-                        "Veuillez vérifier votre connexion réseau et réessayer.";
-
-                JOptionPane.showMessageDialog(this,
-                        userFriendlyMessage,
-                        "Erreur de connexion",
-                        JOptionPane.ERROR_MESSAGE);
+                    "Veuillez vérifier votre connexion réseau et réessayer.";
             } else {
-                userFriendlyMessage = "Une erreur  lors de l'ajout du train:\n\n" + errorMessage;
-
-                JOptionPane.showMessageDialog(this,
-                        userFriendlyMessage,
-                        "Erreur",
-                        JOptionPane.ERROR_MESSAGE);
+                userFriendlyMessage = "Une erreur est survenue lors de l'ajout du train.\n\n" +
+                    "Détails techniques : " + errorMessage;
             }
 
-            System.err.println("Error adding train: " + e.getMessage());
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                userFriendlyMessage,
+                "Erreur",
+                JOptionPane.ERROR_MESSAGE);
         }
     }
 }

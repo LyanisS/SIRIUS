@@ -5,29 +5,17 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 
 @JsonRootName(value = "station")
 public class Station {
-    @JsonProperty("id")
-    private int id;
-
     @JsonProperty("name")
     private String name;
 
     public Station() {}
 
-    public Station(int id, String name) {
-        this.id = id;
+    public Station(String name) {
         this.name = name;
-    }
-
-    public int getId() {
-        return this.id;
     }
 
     public String getName() {
         return this.name;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public void setName(String name) {
@@ -36,10 +24,7 @@ public class Station {
 
     @Override
     public String toString() {
-        return "Station{" +
-                "id=" + this.id +
-                ", name=" + this.name +
-                '}';
+        return "Station{name=" + this.name + '}';
     }
 
     @Override
@@ -48,6 +33,6 @@ public class Station {
         if (o == null || this.getClass() != o.getClass()) return false;
 
         Station s = (Station) o;
-        return this.id == s.id;
+        return s.getName().equals(this.name);
     }
 }

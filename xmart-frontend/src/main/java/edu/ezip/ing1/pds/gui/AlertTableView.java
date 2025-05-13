@@ -24,11 +24,11 @@ public class AlertTableView {
     public AlertTableView(MainInterfaceFrame frame) {
         this.frame = frame;
         this.frame.setTitle("Gestion des alarmes");
-        this.frame.getTableJPanel().removeAll();
+        this.frame.getMainContentPanel().removeAll();
 
         createStyledTable();
 
-        JPanel tablePanel = this.frame.getTableJPanel();
+        JPanel tablePanel = this.frame.getMainContentPanel();
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -37,15 +37,15 @@ public class AlertTableView {
 
         List<JButton> buttons = new ArrayList<>();
 
-        JButton addButton = MainInterfaceFrame.createActionButton("Ajouter une alerte", MainInterfaceFrame.SUCCESS_COLOR);
+        JButton addButton = MainInterfaceFrame.createButton("Ajouter une alerte");
         addButton.addActionListener(e -> showAddAlertDialog());
         buttons.add(addButton);
 
-        JButton deleteButton = MainInterfaceFrame.createActionButton("Supprimer", MainInterfaceFrame.ACCENT_COLOR);
+        JButton deleteButton = MainInterfaceFrame.createButton("Supprimer");
         deleteButton.addActionListener(e -> deleteSelectedAlert());
         buttons.add(deleteButton);
 
-        JButton refreshButton = MainInterfaceFrame.createActionButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
+        JButton refreshButton = MainInterfaceFrame.createButton("Actualiser");
         refreshButton.addActionListener(e -> refreshAlertData());
         buttons.add(refreshButton);
 
@@ -138,7 +138,7 @@ public class AlertTableView {
                     Object[] row = {
                             alert.getId(),
                             alert.getMessage(),
-                            alert.getTimestamp().toString(),
+                            alert.getTime().toString(),
                             alert.getGravity().getType(),
                             alert.getTrain().getId()
                     };
@@ -156,17 +156,12 @@ public class AlertTableView {
     }
 
     private void showAddAlertDialog() {
-
-        MainInterfaceFrame.styleDialogUIComponents();
-
         AddAlertStyle dialog = new AddAlertStyle(this.frame, this.service);
 
         if (dialog.showDialog()) {
             dialog.addAlert();
             this.refreshAlertData();
         }
-
-        MainInterfaceFrame.resetDialogUIComponents();
     }
 
     private void deleteSelectedAlert() {

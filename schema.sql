@@ -1,86 +1,50 @@
+CREATE TABLE train (
+    train_id INT AUTO_INCREMENT PRIMARY KEY
+);
+
 CREATE TABLE station (
-    station_id INT PRIMARY KEY AUTO_INCREMENT,
-    station_name VARCHAR(50) NOT NULL
-);
-
-CREATE TABLE person (
-    person_id INT PRIMARY KEY AUTO_INCREMENT,
-    person_last_name VARCHAR(50) NOT NULL,
-    person_first_name VARCHAR(50) NOT NULL,
-    person_login VARCHAR(50) NOT NULL UNIQUE,
-    person_password VARCHAR(50) NOT NULL
-);
-
-CREATE TABLE track (
-    track_id INT PRIMARY KEY AUTO_INCREMENT,
-    track_name VARCHAR(50) NOT NULL UNIQUE
+    station_name VARCHAR(50) PRIMARY KEY,
+    station_sort INT NOT NULL UNIQUE
 );
 
 CREATE TABLE alert_gravity (
-    alert_gravity_id INT PRIMARY KEY AUTO_INCREMENT,
-    alert_gravity_level INT NOT NULL UNIQUE,
-    alert_gravity_type VARCHAR(50) NOT NULL UNIQUE
+    alert_gravity_type VARCHAR(50) PRIMARY KEY
 );
 
 CREATE TABLE role (
-    role_id INT PRIMARY KEY AUTO_INCREMENT,
-    role_name VARCHAR(50) UNIQUE
-);
-
-CREATE TABLE track_element_type (
-    track_element_type_id INT PRIMARY KEY AUTO_INCREMENT,
-    track_element_type_name VARCHAR(50) NOT NULL UNIQUE
-);
-
-CREATE TABLE switch_position (
-    switch_position_id INT PRIMARY KEY AUTO_INCREMENT,
-    switch_position_name VARCHAR(50) NOT NULL UNIQUE
-);
-
-CREATE TABLE train_status (
-    train_status_id INT PRIMARY KEY AUTO_INCREMENT,
-    train_status_name VARCHAR(50) NOT NULL UNIQUE
-);
-
-CREATE TABLE track_element (
-    track_element_id INT PRIMARY KEY AUTO_INCREMENT,
-    track_element_is_working BOOLEAN NOT NULL,
-    switch_position_id INT REFERENCES switch_position(switch_position_id),
-    track_element_type_id INT NOT NULL REFERENCES track_element_type(track_element_type_id),
-    track_id INT NOT NULL REFERENCES track(track_id),
-    station_id INT REFERENCES station(station_id)
-);
-
-CREATE TABLE train (
-    train_id INT PRIMARY KEY AUTO_INCREMENT,
-    train_status_id INT NOT NULL REFERENCES train_status(train_status_id),
-    track_element_id INT NOT NULL UNIQUE REFERENCES track_element(track_element_id)
+    role_name VARCHAR(50) PRIMARY KEY
 );
 
 CREATE TABLE trip (
-    trip_id INT PRIMARY KEY AUTO_INCREMENT,
-    train_id INT NOT NULL REFERENCES train(train_id),
-    person_id INT NOT NULL REFERENCES person(person_id)
+    trip_id INT PRIMARY KEY,
+    train_id INT NOT NULL REFERENCES train(train_id)
 );
 
 CREATE TABLE schedule (
-    schedule_id INT PRIMARY KEY AUTO_INCREMENT,
-    schedule_timestamp DATETIME NOT NULL,
-    schedule_stop BOOLEAN NOT NULL,
-    track_element_id INT NOT NULL REFERENCES track_element(track_element_id),
+    schedule_id INT PRIMARY KEY,
+    schedule_time_arrival TIME NOT NULL,
+    schedule_time_departure TIME NOT NULL,
+    station_name VARCHAR(50) NOT NULL REFERENCES station(station_name),
     trip_id INT NOT NULL REFERENCES trip(trip_id)
 );
 
 CREATE TABLE alert (
-    alert_id INT PRIMARY KEY AUTO_INCREMENT,
+    alert_id INT PRIMARY KEY,
     alert_message VARCHAR(255) NOT NULL,
-    alert_timestamp DATETIME NOT NULL,
-    alert_gravity_id INT NOT NULL REFERENCES alert_gravity(alert_gravity_id),
+    alert_time TIME NOT NULL,
+    alert_duration INT NOT NULL DEFAULT 0,
+    alert_gravity_type VARCHAR(50) NOT NULL REFERENCES alert_gravity(alert_gravity_type),
     train_id INT NOT NULL REFERENCES train(train_id)
 );
 
-CREATE TABLE role_membership (
-    person_id INT REFERENCES person(person_id),
-    role_id INT REFERENCES role(role_id),
-    PRIMARY KEY(person_id, role_id)
-);
+INSERT INTO alert_gravity (alert_gravity_type) VALUES ('Info');
+INSERT INTO alert_gravity (alert_gravity_type) VALUES ('Avertissement');
+INSERT INTO alert_gravity (alert_gravity_type) VALUES ('Critique');
+
+INSERT INTO station (station_name, station_sort) VALUES ('POSE', 1);
+INSERT INTO station (station_name, station_sort) VALUES ('JASM', 2);
+INSERT INTO station (station_name, station_sort) VALUES ('TROC', 3);
+INSERT INTO station (station_name, station_sort) VALUES ('BONO', 4);
+INSERT INTO station (station_name, station_sort) VALUES ('STSD', 5);
+INSERT INTO station (station_name, station_sort) VALUES ('NATN', 6);
+INSERT INTO station (station_name, station_sort) VALUES ('MAMO', 7);
