@@ -39,6 +39,10 @@ public class ScheduleService {
         this.networkConfig = networkConfig;
     }
 
+    public NetworkConfig getNetworkConfig() {
+        return this.networkConfig;
+    }
+
     public void insertSchedules(Schedules schedules) throws InterruptedException, IOException {
         final Deque<ClientRequest> clientRequests = new ArrayDeque<>();
 
