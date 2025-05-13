@@ -1,13 +1,26 @@
 package edu.ezip.ing1.pds.gui;
 
-import edu.ezip.ing1.pds.business.dto.*;
-import edu.ezip.ing1.pds.services.AlertService;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.sql.Time;
+
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
-import java.awt.*;
-import java.sql.Time;
+import edu.ezip.ing1.pds.business.dto.Alert;
+import edu.ezip.ing1.pds.business.dto.AlertGravity;
+import edu.ezip.ing1.pds.business.dto.Alerts;
+import edu.ezip.ing1.pds.business.dto.Train;
+import edu.ezip.ing1.pds.services.AlertService;
 
 public class AddAlertStyle extends JDialog {
     private final static Logger logger = LoggerFactory.getLogger("FrontEnd - AddAlertStyle");
