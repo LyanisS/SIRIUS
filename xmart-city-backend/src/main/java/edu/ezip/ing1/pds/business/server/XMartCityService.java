@@ -16,6 +16,7 @@ import edu.ezip.ing1.pds.business.dto.Alerts;
 import edu.ezip.ing1.pds.business.dto.Schedule;
 import edu.ezip.ing1.pds.business.dto.Schedules;
 import edu.ezip.ing1.pds.business.dto.Station;
+import edu.ezip.ing1.pds.business.dto.Stations;
 import edu.ezip.ing1.pds.business.dto.Train;
 import edu.ezip.ing1.pds.business.dto.Trains;
 import edu.ezip.ing1.pds.business.dto.Trip;
@@ -37,7 +38,8 @@ public class XMartCityService {
         DELETE_SCHEDULE("DELETE FROM schedule WHERE schedule_id = ?;"),
         SELECT_ALL_ALERTS("SELECT alert_id, alert_message, alert_time, alert_duration, alert_gravity_type, train_id FROM alert;"),
         INSERT_ALERT("INSERT INTO alert (alert_message, alert_time, alert_duration, alert_gravity_type, train_id) VALUES (?, ?, ?, ?, ?);"),
-        DELETE_ALERT("DELETE FROM alert WHERE alert_id = ?");
+        DELETE_ALERT("DELETE FROM alert WHERE alert_id = ?"),
+        SELECT_ALL_STATIONS("SELECT station_name FROM station ORDER BY station_sort");
 
         private final String query;
 
@@ -93,6 +95,9 @@ public class XMartCityService {
                 break;
             case DELETE_ALERT:
                 response = DeleteAlert(request, connection);
+                break;
+            case SELECT_ALL_STATIONS:
+                response = SelectAllStations(request, connection);
                 break;
             default:
                 break;
@@ -306,5 +311,33 @@ public class XMartCityService {
             );
         }
         return new Response(request.getRequestId(), objectMapper.writeValueAsString(alerts));
+    }
+
+    private Response SelectAllStations(final Request request, final Connection connection)
+            throws SQLException, JsonProcessingException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final Statement stmt = connection.createStatement();
+        final ResultSet res = stmt.executeQuery(Queries.SELECT_ALL_STATIONS.query);
+        
+        Stations stations = new Stations();
+        try {
+            while (res.next()) {
+                Station station = new Station(res.getString("station_name"));
+                stations.add(station);
+                logger.debug("Added station: {}", station);
+            }
+        } catch (SQLException e) {
+            logger.error("Error processing station data: {}", e.getMessage(), e);
+            throw e;
+        } finally {
+            try {
+                if (res != null) res.close();
+                stmt.close();
+            } catch (SQLException e) {
+                logger.error("Error closing resources: {}", e.getMessage(), e);
+            }
+        }
+        
+        return new Response(request.getRequestId(), objectMapper.writeValueAsString(stations));
     }
 }

@@ -3,8 +3,11 @@ package edu.ezip.ing1.pds.gui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FlowLayout;
+import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -19,6 +22,10 @@ import edu.ezip.ing1.pds.business.dto.Trains;
 import edu.ezip.ing1.pds.services.TrainService;
 import edu.ezip.ing1.pds.client.commons.NetworkConfig;
 import edu.ezip.ing1.pds.client.commons.ConfigLoader;
+import edu.ezip.ing1.pds.business.dto.Station;
+import edu.ezip.ing1.pds.business.dto.Stations;
+import edu.ezip.ing1.pds.services.StationService;
+
 
 public class TrainTableView {
     private MainTemplate mainTemplate;
@@ -86,6 +93,27 @@ public class TrainTableView {
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         contentPanel.add(scrollPane, BorderLayout.CENTER);
+
+      
+        JPanel stationsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        try {
+            NetworkConfig networkConfig = ConfigLoader.loadConfig(NetworkConfig.class, "network.yaml");
+            StationService stationService = new StationService(networkConfig);
+            Stations stationsObj = stationService.selectStations();
+            if (stationsObj != null && stationsObj.getStations() != null) {
+                for (Station station : stationsObj.getStations()) {
+                    JButton btn = new JButton(station.getName());
+                    btn.setFocusPainted(false);
+                    btn.setFont(new Font("Arial", Font.BOLD, 14));
+                    btn.addActionListener(e -> System.out.println("Station sélectionnée : " + station.getName()));
+                    stationsPanel.add(btn);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Erreur lors de la récupération des stations : " + e.getMessage());
+        }
+        contentPanel.add(stationsPanel, BorderLayout.SOUTH);
 
         if (tableModel.getRowCount() == 0) {
             JLabel emptyLabel = new JLabel("Aucun train disponible", SwingConstants.CENTER);
