@@ -24,6 +24,7 @@ import edu.ezip.ing1.pds.business.dto.Stations;
 import edu.ezip.ing1.pds.business.dto.Train;
 import edu.ezip.ing1.pds.business.dto.Trains;
 import edu.ezip.ing1.pds.business.dto.Trip;
+import edu.ezip.ing1.pds.business.dto.Trips;
 import edu.ezip.ing1.pds.commons.Request;
 import edu.ezip.ing1.pds.commons.Response;
 
@@ -43,7 +44,9 @@ public class XMartCityService {
         SELECT_ALL_ALERTS("SELECT alert_id, alert_message, alert_time, alert_duration, alert_gravity_type, train_id FROM alert;"),
         INSERT_ALERT("INSERT INTO alert (alert_message, alert_time, alert_duration, alert_gravity_type, train_id) VALUES (?, ?, ?, ?, ?);"),
         DELETE_ALERT("DELETE FROM alert WHERE alert_id = ?"),
-        SELECT_ALL_STATIONS("SELECT station_name FROM station ORDER BY station_sort");
+        SELECT_ALL_STATIONS("SELECT station_name FROM station ORDER BY station_sort"),
+        INSERT_TRIP("INSERT INTO trip (trip_id, train_id) VALUES (?, ?);"),
+        SELECT_ALL_TRIPS("SELECT trip_id, train_id FROM trip");
 
         private final String query;
 
@@ -102,6 +105,12 @@ public class XMartCityService {
                 break;
             case SELECT_ALL_STATIONS:
                 response = SelectAllStations(request, connection);
+                break;
+            case INSERT_TRIP:
+                response = InsertTrip(request, connection);
+                break;
+            case SELECT_ALL_TRIPS:
+                response = SelectAllTrips(request, connection);
                 break;
             default:
                 break;
@@ -343,5 +352,37 @@ public class XMartCityService {
         }
         
         return new Response(request.getRequestId(), objectMapper.writeValueAsString(stations));
+    }
+
+    private Response InsertTrip(final Request request, final Connection connection) throws SQLException, IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final Trip trip = objectMapper.readValue(request.getRequestBody(), Trip.class);
+
+        try {
+            final PreparedStatement stmt = connection.prepareStatement(Queries.INSERT_TRIP.query);
+            stmt.setInt(1, trip.getId());
+            stmt.setInt(2, trip.getTrain().getId());
+            stmt.executeUpdate();
+
+            return new Response(request.getRequestId(), objectMapper.writeValueAsString(trip));
+        } catch (SQLException e) {
+            logger.error("SQL error inserting trip: {}", e.getMessage());
+            throw new SQLException("Erreur SQL lors de l'insertion du trip: " + e.getMessage(), e);
+        }
+    }
+
+    private Response SelectAllTrips(final Request request, final Connection connection) throws SQLException, JsonProcessingException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final Statement stmt = connection.createStatement();
+        final ResultSet res = stmt.executeQuery(Queries.SELECT_ALL_TRIPS.query);
+
+        Trips trips = new Trips();
+        while (res.next()) {
+            int tripId = res.getInt("trip_id");
+            int trainId = res.getInt("train_id");
+            Trip trip = new Trip(tripId, new Train(trainId));
+            trips.add(trip);
+        }
+        return new Response(request.getRequestId(), objectMapper.writeValueAsString(trips));
     }
 }
