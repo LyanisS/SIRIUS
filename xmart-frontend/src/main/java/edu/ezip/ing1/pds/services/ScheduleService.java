@@ -60,29 +60,21 @@ public class ScheduleService {
             clientRequests.push(clientRequest);
         }
 
-        Exception lastException = null;
         while (!clientRequests.isEmpty()) {
             final ClientRequest clientRequest = clientRequests.pop();
             clientRequest.join();
             final Schedule schedule = (Schedule) clientRequest.getInfo();
             if (clientRequest.getException() != null) {
-                lastException = clientRequest.getException();
+                Exception exception = clientRequest.getException();
                 logger.error("Error in thread {}: {}",
                         clientRequest.getThreadName(),
-                        lastException.getMessage());
+                        exception.getMessage());
+                throw new IOException("Error inserting schedule: " + exception.getMessage(), exception);
             } else {
                 logger.debug("Thread {} complete : {} --> {}",
                         clientRequest.getThreadName(),
                         schedule.getTrip(),
                         clientRequest.getResult());
-            }
-        }
-
-        if (lastException != null) {
-            if (lastException instanceof IOException) {
-                throw (IOException) lastException;
-            } else {
-                throw new IOException("Error inserting schedule: " + lastException.getMessage(), lastException);
             }
         }
     }
