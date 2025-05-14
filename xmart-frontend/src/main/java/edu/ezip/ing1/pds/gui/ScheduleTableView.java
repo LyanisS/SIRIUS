@@ -169,12 +169,12 @@ public class ScheduleTableView {
             table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
 
-        // Définir des largeurs spécifiques pour certaines colonnes
+
         if (table.getColumnCount() >= 4) {
-            table.getColumnModel().getColumn(0).setPreferredWidth(80); // ID Train
-            table.getColumnModel().getColumn(1).setPreferredWidth(80); // ID Trajet
-            table.getColumnModel().getColumn(2).setPreferredWidth(150); // Stations desservies
-            table.getColumnModel().getColumn(3).setPreferredWidth(170); // Date/Heure
+            table.getColumnModel().getColumn(0).setPreferredWidth(80); 
+            table.getColumnModel().getColumn(1).setPreferredWidth(80); 
+            table.getColumnModel().getColumn(2).setPreferredWidth(150); 
+            table.getColumnModel().getColumn(3).setPreferredWidth(170); 
         }
 
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -224,12 +224,12 @@ public class ScheduleTableView {
                
             } else {
                
-                this.frame.showWarningDialog("Attention", "Aucune station n'a été trouvée dans la base de données.");
+                this.frame.showWarningDialog("Attention", "Aucune station dans la base!");
             }
         } catch (Exception ex) {
             
             ex.printStackTrace();
-            this.frame.showErrorDialog(ex, "Erreur", "Erreur lors de la récupération des stations depuis la base de données");
+            this.frame.showErrorDialog(ex, "Erreur", "Erreur lors de la récupération des stations ");
         }
         return stationsList;
     }
@@ -247,7 +247,7 @@ public class ScheduleTableView {
         panel.add(titleLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Liste déroulante des trains
+        
         JLabel trainLabel = new JLabel("Train:");
         trainLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         trainLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
@@ -259,7 +259,7 @@ public class ScheduleTableView {
         trainComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         trainComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        // Récupération des trains
+        
         List<Train> trainList = new ArrayList<>();
         try {
             TrainService trainService = new TrainService(this.frame.getNetworkConfig());
@@ -277,7 +277,7 @@ public class ScheduleTableView {
         panel.add(trainComboBox);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // Date/heure avec un calendrier
+        
         JLabel datetimeLabel = new JLabel("Date/heure:");
         datetimeLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         datetimeLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
@@ -285,7 +285,7 @@ public class ScheduleTableView {
         panel.add(datetimeLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
 
-        // Utilisation d'un JSpinner avec un modèle de date
+        
         SpinnerDateModel dateModel = new SpinnerDateModel();
         JSpinner dateSpinner = new JSpinner(dateModel);
         JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "yyyy-MM-dd HH:mm:ss");
@@ -295,7 +295,7 @@ public class ScheduleTableView {
         panel.add(dateSpinner);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // Stations desservies
+        
         JLabel stationsLabel = new JLabel("Stations desservies:");
         stationsLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         stationsLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
@@ -303,7 +303,7 @@ public class ScheduleTableView {
         panel.add(stationsLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
 
-        // Liste des stations avec cases à cocher
+        
         JPanel stationsPanel = new JPanel();
         stationsPanel.setLayout(new BoxLayout(stationsPanel, BoxLayout.Y_AXIS));
         stationsPanel.setBackground(Color.WHITE);
@@ -315,7 +315,7 @@ public class ScheduleTableView {
         stationsScrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
         stationsScrollPane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         
-        // Liste des stations à cocher
+        
         List<JCheckBox> stationCheckboxes = new ArrayList<>();
         List<Station> stationsList = getStations();
         
@@ -329,7 +329,7 @@ public class ScheduleTableView {
         panel.add(stationsScrollPane);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // ID Trajet
+    
         JLabel tripLabel = new JLabel("ID Trajet:");
         tripLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         tripLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
@@ -355,7 +355,7 @@ public class ScheduleTableView {
             String tripId = tripField.getText();
             List<Station> selectedStations = new ArrayList<>();
 
-            // Récupération des stations sélectionnées
+            
             for (int i = 0; i < stationCheckboxes.size(); i++) {
                 if (stationCheckboxes.get(i).isSelected()) {
                     Station station = new Station(stationCheckboxes.get(i).getText());
@@ -367,15 +367,15 @@ public class ScheduleTableView {
                 try {
                     Schedule newSchedule = new Schedule();
 
-                    // Définir l'heure d'arrivée
+                    
                     newSchedule.setTimeArrival(new Time(selectedDate.getTime()));
                     
-                    // Définir le trajet avec le train sélectionné
+                    
                     Train selectedTrain = trainList.get(selectedTrainIndex);
                     Trip trip = new Trip(Integer.parseInt(tripId), selectedTrain);
                     newSchedule.setTrip(trip);
                     
-                    // Pour chaque station sélectionnée, créer un horaire
+                  
                     Schedules schedules = new Schedules();
                     for (Station station : selectedStations) {
                         Schedule stationSchedule = new Schedule();
@@ -387,7 +387,7 @@ public class ScheduleTableView {
 
                     this.service.insertSchedules(schedules);
                     refreshScheduleData();
-                    this.frame.showSuccessDialog("Parfait!", "Le trajet a été ajouté avec succès!");
+                    this.frame.showSuccessDialog("Bravo!", "Le trajet a été ajouté avec succès!");
 
                 } catch (Exception ex) {
                     this.frame.showErrorDialog(ex, "Erreur!!", "Vous avez une erreur lors de l'ajout du trajet!!");
@@ -407,7 +407,7 @@ public class ScheduleTableView {
             return;
         }
 
-        // Les colonnes ont changé, donc nous récupérons les données différemment
+        
         int trainId = (int) tableModel.getValueAt(selectedRow, 0);
         int tripId = (int) tableModel.getValueAt(selectedRow, 1);
         String stationName = (String) tableModel.getValueAt(selectedRow, 2);
@@ -425,7 +425,7 @@ public class ScheduleTableView {
         panel.add(titleLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Liste déroulante des trains
+   
         JLabel trainLabel = new JLabel("Train:");
         trainLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         trainLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
@@ -437,7 +437,7 @@ public class ScheduleTableView {
         trainComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         trainComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        // Récupération des trains
+      
         List<Train> trainList = new ArrayList<>();
         int selectedTrainIndex = -1;
         try {
@@ -464,7 +464,7 @@ public class ScheduleTableView {
         panel.add(trainComboBox);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // Date/heure avec un calendrier
+        
         JLabel datetimeLabel = new JLabel("Date/heure:");
         datetimeLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         datetimeLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
@@ -472,7 +472,7 @@ public class ScheduleTableView {
         panel.add(datetimeLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
 
-        // Utilisation d'un JSpinner avec un modèle de date
+        
         SpinnerDateModel dateModel = new SpinnerDateModel();
         JSpinner dateSpinner = new JSpinner(dateModel);
         JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "yyyy-MM-dd HH:mm:ss");
@@ -480,20 +480,20 @@ public class ScheduleTableView {
         dateSpinner.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         dateSpinner.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        // Définir la date actuelle
+       
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             Date parsedDate = dateFormat.parse(currentDatetime);
             dateModel.setValue(parsedDate);
         } catch (Exception ex) {
-            // En cas d'erreur, utiliser la date actuelle
+            
             dateModel.setValue(new Date());
         }
         
         panel.add(dateSpinner);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        // Stations desservies
+     
         JLabel stationsLabel = new JLabel("Stations desservies:");
         stationsLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         stationsLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
@@ -501,7 +501,7 @@ public class ScheduleTableView {
         panel.add(stationsLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
 
-        // Liste des stations avec cases à cocher
+        
         JPanel stationsPanel = new JPanel();
         stationsPanel.setLayout(new BoxLayout(stationsPanel, BoxLayout.Y_AXIS));
         stationsPanel.setBackground(Color.WHITE);
@@ -513,14 +513,14 @@ public class ScheduleTableView {
         stationsScrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 150));
         stationsScrollPane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
 
-        // Liste des stations à cocher
+        
         List<JCheckBox> stationCheckboxes = new ArrayList<>();
         List<Station> stationsList = getStations();
         
         for (Station station : stationsList) {
             JCheckBox checkbox = new JCheckBox(station.getName());
             checkbox.setBackground(Color.WHITE);
-            // Présélectionner la station actuelle
+          
             if (station.getName().equals(stationName)) {
                 checkbox.setSelected(true);
             }
@@ -531,7 +531,7 @@ public class ScheduleTableView {
         panel.add(stationsScrollPane);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         
-        // Champ pour ID Trajet
+       
         JLabel tripIdLabel = new JLabel("ID Trajet:");
         tripIdLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         tripIdLabel.setForeground(MainInterfaceFrame.TEXT_COLOR);
@@ -558,7 +558,6 @@ public class ScheduleTableView {
             Date selectedDate = dateModel.getDate();
             List<Station> selectedStations = new ArrayList<>();
 
-            // Récupération des stations sélectionnées
             for (int i = 0; i < stationCheckboxes.size(); i++) {
                 if (stationCheckboxes.get(i).isSelected()) {
                     Station station = new Station(stationCheckboxes.get(i).getText());
@@ -568,16 +567,16 @@ public class ScheduleTableView {
 
             if (selectedTrainIdxNew != -1 && !selectedStations.isEmpty()) {
                 try {
-                    // Définir l'horaire mis à jour
+                   
                     Schedule updatedSchedule = new Schedule();
                     updatedSchedule.setTimeArrival(new Time(selectedDate.getTime()));
 
-                    // Récupérer le train sélectionné
+                    
                     Train selectedTrain = trainList.get(selectedTrainIdxNew);
                     Trip trip = new Trip(tripId, selectedTrain);
                     updatedSchedule.setTrip(trip);
                     
-                    // Mettre à jour l'horaire pour chaque station sélectionnée
+                    
                     for (Station station : selectedStations) {
                         updatedSchedule.setStation(station);
                         this.service.UpdateSchedule(tripId, true); // Nous utilisons tripId comme identifiant
