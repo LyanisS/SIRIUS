@@ -2,7 +2,11 @@ package edu.ezip.ing1.pds.business.server;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -313,7 +317,7 @@ public class XMartCityService {
         return new Response(request.getRequestId(), objectMapper.writeValueAsString(alerts));
     }
 
-    private Response SelectAllStations(final Request request, final Connection connection)
+    private Response SelectAllStations(final Request request, final Connection connection) 
             throws SQLException, JsonProcessingException {
         final ObjectMapper objectMapper = new ObjectMapper();
         final Statement stmt = connection.createStatement();
