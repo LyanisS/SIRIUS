@@ -110,7 +110,7 @@ public class ScheduleTableView {
             "ID Trajet",
             "Stations desservies",
             "Heures d'arrivée",
-            "Direction"
+            "Terminus"
         };
 
         tableModel = new DefaultTableModel(columnNames, 0) {
@@ -248,9 +248,9 @@ public class ScheduleTableView {
                             Station lastStation = tripSchedules.get(tripSchedules.size() - 1).getStation();
                             
                             if (firstStation.getName().compareTo(lastStation.getName()) < 0) {
-                                direction = "Aller";
+                                direction = "POSE";
                             } else {
-                                direction = "Retour";
+                                direction = "MAMO";
                             }
                         }
                     } else {
@@ -270,9 +270,9 @@ public class ScheduleTableView {
                                 Station lastStation = stations.get(stations.size() - 1);
                                 
                                 if (firstStation.getName().compareTo(lastStation.getName()) < 0) {
-                                    direction = "Aller";
+                                    direction = "POSE";
                                 } else {
-                                    direction = "Retour";
+                                    direction = "MAMO";
                                 }
                             }
                         }
@@ -361,7 +361,7 @@ public class ScheduleTableView {
         panel.add(trainComboBox);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
         
-        JLabel directionLabel = createFormLabel("Sens de circulation:");
+        JLabel directionLabel = createFormLabel("Terminus:");
         panel.add(directionLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
 
@@ -372,8 +372,8 @@ public class ScheduleTableView {
         directionPanel.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
         
         ButtonGroup directionGroup = new ButtonGroup();
-        JRadioButton allerRadio = new JRadioButton("Aller");
-        JRadioButton retourRadio = new JRadioButton("Retour");
+        JRadioButton allerRadio = new JRadioButton("POSE");
+        JRadioButton retourRadio = new JRadioButton("MAMO");
         allerRadio.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
         retourRadio.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
         allerRadio.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -486,22 +486,66 @@ public class ScheduleTableView {
             List<JCheckBox> selectedCheckboxes = stationCheckboxes.stream()
                     .filter(JCheckBox::isSelected)
                     .collect(Collectors.toList());
-            
             if (selectedCheckboxes.size() > 0) {
                 Date firstTime = (Date) arrivalTimeSpinners.get(selectedCheckboxes.get(0)).getValue();
                 Calendar baseCal = Calendar.getInstance();
                 baseCal.setTime(firstTime);
-                
                 for (int i = 1; i < selectedCheckboxes.size(); i++) {
                     JCheckBox cb = selectedCheckboxes.get(i);
                     JSpinner spinner = arrivalTimeSpinners.get(cb);
-                    
                     baseCal.add(Calendar.MINUTE, 5);
                     spinner.setValue(baseCal.getTime());
                 }
             }
         });
-        panel.add(autoScheduleButton);
+
+        JButton reverseButton = new JButton("Inverser le sens");
+        reverseButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        reverseButton.setFont(new Font("Arial", Font.PLAIN, 14));
+        reverseButton.addActionListener(e -> {
+           
+            List<Integer> selectedIndices = new ArrayList<>();
+            List<Date> selectedTimes = new ArrayList<>();
+            for (int i = 0; i < stationCheckboxes.size(); i++) {
+                JCheckBox cb = stationCheckboxes.get(i);
+                if (cb.isSelected()) {
+                    selectedIndices.add(i);
+                    selectedTimes.add((Date) arrivalTimeSpinners.get(cb).getValue());
+                }
+            }
+           
+            for (JCheckBox cb : stationCheckboxes) {
+                cb.setSelected(false);
+            }
+            
+            for (int i = 0; i < selectedIndices.size(); i++) {
+                int idx = selectedIndices.get(selectedIndices.size() - 1 - i);
+                Date time = selectedTimes.get(selectedTimes.size() - 1 - i);
+                JCheckBox cb = stationCheckboxes.get(idx);
+                cb.setSelected(true);
+                arrivalTimeSpinners.get(cb).setValue(time);
+            }
+            
+            List<Component> components = new ArrayList<>();
+            for (int i = 0; i < stationsMainPanel.getComponentCount(); i++) {
+                components.add(stationsMainPanel.getComponent(i));
+            }
+            stationsMainPanel.removeAll();
+            for (int i = components.size() - 1; i >= 0; i--) {
+                stationsMainPanel.add(components.get(i));
+            }
+            stationsMainPanel.revalidate();
+            stationsMainPanel.repaint();
+        });
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
+        buttonPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        buttonPanel.add(autoScheduleButton);
+        buttonPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        buttonPanel.add(reverseButton);
+        panel.add(buttonPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
 
         JOptionPane optionPane = new JOptionPane(
@@ -525,9 +569,8 @@ public class ScheduleTableView {
             for (int i = 0; i < stationCheckboxes.size(); i++) {
                 JCheckBox checkbox = stationCheckboxes.get(i);
                 if (checkbox.isSelected()) {
-                    Station station = new Station(checkbox.getText());
+                    Station station = stationsList.get(i);
                     selectedStations.add(station);
-                    
                     Date arrivalTime = (Date) arrivalTimeSpinners.get(checkbox).getValue();
                     stationArrivalTimes.put(station, arrivalTime);
                 }
@@ -537,7 +580,7 @@ public class ScheduleTableView {
                 try {
                     int tripIdInt = Integer.parseInt(tripId);
                     Trip trip = new Trip(tripIdInt, trainList.get(selectedTrainIndex));
-                    String direction = allerRadio.isSelected() ? "Aller" : "Retour";
+                    String direction = allerRadio.isSelected() ? "POSE" : "MAMO";
                     
                     Trips existingTrips = this.tripService.selectTrips();
                     boolean tripExists = false;
@@ -808,9 +851,8 @@ public class ScheduleTableView {
             for (int i = 0; i < stationCheckboxes.size(); i++) {
                 JCheckBox checkbox = stationCheckboxes.get(i);
                 if (checkbox.isSelected()) {
-                    Station station = new Station(checkbox.getText());
+                    Station station = stationsList.get(i);
                     selectedStations.add(station);
-                    
                     Date arrivalTime = (Date) arrivalTimeSpinners.get(checkbox).getValue();
                     stationArrivalTimes2.put(station, arrivalTime);
                 }
