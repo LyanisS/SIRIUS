@@ -46,7 +46,8 @@ public class XMartCityService {
         DELETE_ALERT("DELETE FROM alert WHERE alert_id = ?"),
         SELECT_ALL_STATIONS("SELECT station_name FROM station ORDER BY station_sort"),
         INSERT_TRIP("INSERT INTO trip (trip_id, train_id) VALUES (?, ?);"),
-        SELECT_ALL_TRIPS("SELECT trip_id, train_id FROM trip");
+        SELECT_ALL_TRIPS("SELECT trip_id, train_id FROM trip"),
+        DELETE_TRIP("DELETE FROM trip WHERE trip_id = ?");
 
         private final String query;
 
@@ -111,6 +112,9 @@ public class XMartCityService {
                 break;
             case SELECT_ALL_TRIPS:
                 response = SelectAllTrips(request, connection);
+                break;
+            case DELETE_TRIP:
+                response = DeleteTrip(request, connection);
                 break;
             default:
                 break;
@@ -384,5 +388,24 @@ public class XMartCityService {
             trips.add(trip);
         }
         return new Response(request.getRequestId(), objectMapper.writeValueAsString(trips));
+    }
+
+    private Response DeleteTrip(final Request request, final Connection connection) throws SQLException, IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final Trip trip = objectMapper.readValue(request.getRequestBody(), Trip.class);
+
+        try {
+            PreparedStatement deleteStmt = connection.prepareStatement(Queries.DELETE_TRIP.query);
+            deleteStmt.setInt(1, trip.getId());
+            int rowsAffected = deleteStmt.executeUpdate();
+
+            if (rowsAffected == 0) {
+                throw new SQLException("Aucun trajet n'a été supprimé. Le trajet " + trip.getId() + " n'existe pas.");
+            }
+        } catch (SQLException e) {
+            logger.error("SQL error deleting trip: {}", e.getMessage());
+            throw new SQLException("Erreur lors de la suppression du trajet: " + e.getMessage(), e);
+        }
+        return new Response(request.getRequestId(), objectMapper.writeValueAsString(trip));
     }
 }
