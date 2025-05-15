@@ -18,6 +18,7 @@ import edu.ezip.ing1.pds.business.dto.Trips;
 import edu.ezip.ing1.pds.client.commons.ClientRequest;
 import edu.ezip.ing1.pds.client.commons.NetworkConfig;
 import edu.ezip.ing1.pds.commons.Request;
+import edu.ezip.ing1.pds.requests.DeleteTripClientRequest;
 import edu.ezip.ing1.pds.requests.InsertTripClientRequest;
 import edu.ezip.ing1.pds.requests.SelectAllTripsClientRequest;
 
@@ -28,6 +29,7 @@ public class TripService {
 
     final String insertRequestOrder = "INSERT_TRIP";
     final String selectRequestOrder = "SELECT_ALL_TRIPS";
+    final String deleteRequestOrder = "DELETE_TRIP";
 
     private final NetworkConfig networkConfig;
 
@@ -90,5 +92,35 @@ public class TripService {
             logger.error("No trips found");
             return null;
         }
+    }
+    
+    public void deleteTrip(int tripId) throws InterruptedException, IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final String requestId = UUID.randomUUID().toString();
+        final Request request = new Request();
+        request.setRequestId(requestId);
+        request.setRequestOrder(deleteRequestOrder);
+
+        Trip trip = new Trip(tripId, null);
+        String jsonifiedTrip = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(trip);
+        request.setRequestContent(jsonifiedTrip);
+
+        objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
+        final byte[] requestBytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(request);
+
+        final DeleteTripClientRequest clientRequest = new DeleteTripClientRequest(
+                networkConfig, 0, request, trip, requestBytes);
+
+        logger.debug("Sending delete request for tripId: {}", tripId);
+        clientRequest.join();
+
+        if (clientRequest.getException() != null) {
+            logger.error("Error deleting trip: {}", clientRequest.getException().getMessage());
+            throw new IOException("Error deleting trip: " + clientRequest.getException().getMessage(),
+                    clientRequest.getException());
+        }
+
+        String result = (String) clientRequest.getResult();
+        logger.debug("Delete trip result: {}", result);
     }
 } 
