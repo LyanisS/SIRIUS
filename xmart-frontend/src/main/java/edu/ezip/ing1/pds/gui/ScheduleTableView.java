@@ -548,92 +548,97 @@ public class ScheduleTableView {
         panel.add(buttonPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        JOptionPane optionPane = new JOptionPane(
-                panel,
-                JOptionPane.PLAIN_MESSAGE,
-                JOptionPane.OK_CANCEL_OPTION);
-        
-        JDialog dialog = optionPane.createDialog(this.frame, "Ajouter un trajet");
-        dialog.setMinimumSize(new Dimension(550, 700));
-        dialog.setResizable(true);
-        dialog.setVisible(true);
-        
-        Integer result = (Integer) optionPane.getValue();
-        if (result != null && result == JOptionPane.OK_OPTION) {
-            int selectedTrainIndex = trainComboBox.getSelectedIndex();
-            String tripId = tripField.getText();
-
-            List<Station> selectedStations = new ArrayList<>();
-            Map<Station, Date> stationArrivalTimes = new HashMap<>();
-            
-            for (int i = 0; i < stationCheckboxes.size(); i++) {
-                JCheckBox checkbox = stationCheckboxes.get(i);
-                if (checkbox.isSelected()) {
-                    Station station = stationsList.get(i);
-                    selectedStations.add(station);
-                    Date arrivalTime = (Date) arrivalTimeSpinners.get(checkbox).getValue();
-                    stationArrivalTimes.put(station, arrivalTime);
+        boolean done = false;
+        while (!done) {
+            JOptionPane optionPane = new JOptionPane(
+                    panel,
+                    JOptionPane.PLAIN_MESSAGE,
+                    JOptionPane.OK_CANCEL_OPTION);
+            JDialog dialog = optionPane.createDialog(this.frame, "Ajouter un trajet");
+            dialog.setMinimumSize(new Dimension(550, 700));
+            dialog.setResizable(true);
+            dialog.setVisible(true);
+            Integer result = (Integer) optionPane.getValue();
+            if (result != null && result == JOptionPane.OK_OPTION) {
+                int selectedTrainIndex = trainComboBox.getSelectedIndex();
+                String tripId = tripField.getText();
+                List<Station> selectedStations = new ArrayList<>();
+                Map<Station, Date> stationArrivalTimes = new HashMap<>();
+                for (int i = 0; i < stationCheckboxes.size(); i++) {
+                    JCheckBox checkbox = stationCheckboxes.get(i);
+                    if (checkbox.isSelected()) {
+                        Station station = stationsList.get(i);
+                        selectedStations.add(station);
+                        Date arrivalTime = (Date) arrivalTimeSpinners.get(checkbox).getValue();
+                        stationArrivalTimes.put(station, arrivalTime);
+                    }
                 }
-            }
-
-            if (selectedTrainIndex != -1 && !tripId.isEmpty() && !selectedStations.isEmpty()) {
-                try {
-                    int tripIdInt = Integer.parseInt(tripId);
-                    Trip trip = new Trip(tripIdInt, trainList.get(selectedTrainIndex));
-                    String direction = allerRadio.isSelected() ? "POSE" : "MAMO";
-                    
-                    Trips existingTrips = this.tripService.selectTrips();
-                    boolean tripExists = false;
-                    
-                    if (existingTrips != null && existingTrips.getTrips() != null) {
-                        for (Trip existingTrip : existingTrips.getTrips()) {
-                            if (existingTrip.getId() == trip.getId()) {
-                                tripExists = true;
-                                break;
+                if (selectedTrainIndex != -1 && !tripId.isEmpty() && !selectedStations.isEmpty()) {
+                    try {
+                        int tripIdInt = Integer.parseInt(tripId);
+                        Trip trip = new Trip(tripIdInt, trainList.get(selectedTrainIndex));
+                        String direction = allerRadio.isSelected() ? "POSE" : "MAMO";
+                     
+                        Schedules allSchedules = this.service.selectSchedules();
+                        if (allSchedules != null && allSchedules.getSchedules() != null) {
+                            for (Schedule existing : allSchedules.getSchedules()) {
+                                if (existing.getTrip().getTrain().getId() == trainList.get(selectedTrainIndex).getId()) {
+                                    for (Station station : selectedStations) {
+                                        Date newArrival = stationArrivalTimes.get(station);
+                                        Time existingArrival = existing.getTimeArrival();
+                                        if (existingArrival != null && newArrival != null && isSameHourMinute(newArrival, existingArrival)) {
+                                            JOptionPane.showMessageDialog(panel, "Le train est déjà prévu à une autre station à " +
+                                                new java.text.SimpleDateFormat("HH:mm").format(newArrival) + ". Veuillez choisir un autre horaire.", "Conflit d'horaires", JOptionPane.WARNING_MESSAGE);
+                                            continue;
+                                        }
+                                    }
+                                }
                             }
                         }
+                        Trips existingTrips = this.tripService.selectTrips();
+                        boolean tripExists = false;
+                        if (existingTrips != null && existingTrips.getTrips() != null) {
+                            for (Trip existingTrip : existingTrips.getTrips()) {
+                                if (existingTrip.getId() == trip.getId()) {
+                                    tripExists = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (tripExists) {
+                            JOptionPane.showMessageDialog(panel, "Un trajet avec cet ID existe déjà. Veuillez choisir un autre ID.", "Attention", JOptionPane.WARNING_MESSAGE);
+                            continue;
+                        }
+                        this.tripService.insertTrip(trip);
+                        Schedules schedules = new Schedules();
+                        for (Station station : selectedStations) {
+                            Schedule stationSchedule = new Schedule();
+                            Calendar arrivalCal = Calendar.getInstance();
+                            arrivalCal.setTime(stationArrivalTimes.get(station));
+                            Time arrivalTime = new Time(arrivalCal.getTimeInMillis());
+                            stationSchedule.setTimeArrival(arrivalTime);
+                            Calendar depCal = (Calendar) arrivalCal.clone();
+                            depCal.add(Calendar.MINUTE, 2);
+                            Time departureTime = new Time(depCal.getTimeInMillis());
+                            stationSchedule.setTimeDeparture(departureTime);
+                            stationSchedule.setTrip(trip);
+                            stationSchedule.setStation(station);
+                            schedules.add(stationSchedule);
+                        }
+                        this.service.insertSchedules(schedules);
+                        tripStations.put(tripIdInt, selectedStations);
+                        refreshScheduleData();
+                        this.frame.showSuccessDialog("Bravo!", "Le trajet a été ajouté avec succès!");
+                        done = true;
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(panel, "Vous avez une erreur lors de l'ajout du trajet : " + ex.getMessage(), "Erreur!!", JOptionPane.ERROR_MESSAGE);
                     }
-                    
-                    if (tripExists) {
-                        this.frame.showWarningDialog("Attention", "Un trajet avec cet ID existe déjà. Veuillez choisir un autre ID.");
-                        return;
-                    }
-                    
-                    this.tripService.insertTrip(trip);
-                    
-                    Schedules schedules = new Schedules();
-                    
-                    for (Station station : selectedStations) {
-                        Schedule stationSchedule = new Schedule();
-                        
-                        Calendar arrivalCal = Calendar.getInstance();
-                        arrivalCal.setTime(stationArrivalTimes.get(station));
-                        Time arrivalTime = new Time(arrivalCal.getTimeInMillis());
-                        stationSchedule.setTimeArrival(arrivalTime);
-                        
-                        Calendar depCal = (Calendar) arrivalCal.clone();
-                        depCal.add(Calendar.MINUTE, 2);
-                        Time departureTime = new Time(depCal.getTimeInMillis());
-                        stationSchedule.setTimeDeparture(departureTime);
-                        
-                        stationSchedule.setTrip(trip);
-                        stationSchedule.setStation(station);
-                        schedules.add(stationSchedule);
-                    }
-                    
-                    this.service.insertSchedules(schedules);
-                    
-                    tripStations.put(tripIdInt, selectedStations);
-
-                    refreshScheduleData();
-                    this.frame.showSuccessDialog("Bravo!", "Le trajet a été ajouté avec succès!");
-
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    this.frame.showErrorDialog(ex, "Erreur!!", "Vous avez une erreur lors de l'ajout du trajet : " + ex.getMessage());
+                } else {
+                    JOptionPane.showMessageDialog(panel, "Il faut remplir tous les champs et sélectionner au moins une station!", "Erreur!", JOptionPane.WARNING_MESSAGE);
                 }
             } else {
-                this.frame.showWarningDialog("Erreur!", "Il faut remplir tous les champs et sélectionner au moins une station!");
+                done = true;
             }
         }
     }
@@ -831,74 +836,82 @@ public class ScheduleTableView {
         panel.add(autoScheduleButton);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        JOptionPane optionPane = new JOptionPane(
-                panel,
-                JOptionPane.PLAIN_MESSAGE,
-                JOptionPane.OK_CANCEL_OPTION);
-        
-        JDialog dialog = optionPane.createDialog(this.frame, "Modifier un trajet");
-        dialog.setMinimumSize(new Dimension(550, 700));
-        dialog.setResizable(true);
-        dialog.setVisible(true);
-        
-        Integer result = (Integer) optionPane.getValue();
-        if (result != null && result == JOptionPane.OK_OPTION) {
-            int selectedTrainIdxNew = trainComboBox.getSelectedIndex();
-            
-            List<Station> selectedStations = new ArrayList<>();
-            Map<Station, Date> stationArrivalTimes2 = new HashMap<>();
-            
-            for (int i = 0; i < stationCheckboxes.size(); i++) {
-                JCheckBox checkbox = stationCheckboxes.get(i);
-                if (checkbox.isSelected()) {
-                    Station station = stationsList.get(i);
-                    selectedStations.add(station);
-                    Date arrivalTime = (Date) arrivalTimeSpinners.get(checkbox).getValue();
-                    stationArrivalTimes2.put(station, arrivalTime);
-                }
-            }
-
-            if (selectedTrainIdxNew != -1 && !selectedStations.isEmpty()) {
-                try {
-                    Trip trip = new Trip(tripId, trainList.get(selectedTrainIdxNew));
-                    
-                    this.service.deleteSchedule(tripId);
-                    
-                    Schedules schedules = new Schedules();
-                    
-                    for (Station station : selectedStations) {
-                        Schedule stationSchedule = new Schedule();
-                        
-                        Calendar arrivalCal = Calendar.getInstance();
-                        arrivalCal.setTime(stationArrivalTimes2.get(station));
-                        Time arrivalTime = new Time(arrivalCal.getTimeInMillis());
-                        stationSchedule.setTimeArrival(arrivalTime);
-                        
-                        Calendar depCal = (Calendar) arrivalCal.clone();
-                        depCal.add(Calendar.MINUTE, 2);
-                        Time departureTime = new Time(depCal.getTimeInMillis());
-                        stationSchedule.setTimeDeparture(departureTime);
-                        
-                        stationSchedule.setTrip(trip);
-                        stationSchedule.setStation(station);
-                        schedules.add(stationSchedule);
+        boolean done = false;
+        while (!done) {
+            JOptionPane optionPane = new JOptionPane(
+                    panel,
+                    JOptionPane.PLAIN_MESSAGE,
+                    JOptionPane.OK_CANCEL_OPTION);
+            JDialog dialog = optionPane.createDialog(this.frame, "Modifier un trajet");
+            dialog.setMinimumSize(new Dimension(550, 700));
+            dialog.setResizable(true);
+            dialog.setVisible(true);
+            Integer result = (Integer) optionPane.getValue();
+            if (result != null && result == JOptionPane.OK_OPTION) {
+                int selectedTrainIdxNew = trainComboBox.getSelectedIndex();
+                List<Station> selectedStations = new ArrayList<>();
+                Map<Station, Date> stationArrivalTimes2 = new HashMap<>();
+                for (int i = 0; i < stationCheckboxes.size(); i++) {
+                    JCheckBox checkbox = stationCheckboxes.get(i);
+                    if (checkbox.isSelected()) {
+                        Station station = stationsList.get(i);
+                        selectedStations.add(station);
+                        Date arrivalTime = (Date) arrivalTimeSpinners.get(checkbox).getValue();
+                        stationArrivalTimes2.put(station, arrivalTime);
                     }
-                    
-                    this.service.insertSchedules(schedules);
-                    
-                    this.tripService.insertTrip(trip);
-                    
-                    tripStations.put(tripId, selectedStations);
-
-                    refreshScheduleData();
-                    this.frame.showSuccessDialog("Modification réussie!", "Le trajet a été modifié avec succès!");
-
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    this.frame.showErrorDialog(ex, "Erreur!", "Vous avez une erreur lors de la modification du trajet: " + ex.getMessage());
+                }
+                if (selectedTrainIdxNew != -1 && !selectedStations.isEmpty()) {
+                    try {
+                       
+                        Schedules allSchedules = this.service.selectSchedules();
+                        if (allSchedules != null && allSchedules.getSchedules() != null) {
+                            for (Schedule existing : allSchedules.getSchedules()) {
+                                
+                                if (existing.getTrip().getTrain().getId() == trainList.get(selectedTrainIdxNew).getId() && existing.getTrip().getId() != tripId) {
+                                    for (Station station : selectedStations) {
+                                        Date newArrival = stationArrivalTimes2.get(station);
+                                        Time existingArrival = existing.getTimeArrival();
+                                        if (existingArrival != null && newArrival != null && isSameHourMinute(newArrival, existingArrival)) {
+                                            JOptionPane.showMessageDialog(panel, "Le train est déjà prévu à une autre station à " +
+                                                new java.text.SimpleDateFormat("HH:mm").format(newArrival) + ". Veuillez choisir un autre horaire.", "Conflit d'horaires", JOptionPane.WARNING_MESSAGE);
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Trip trip = new Trip(tripId, trainList.get(selectedTrainIdxNew));
+                        this.service.deleteSchedule(tripId);
+                        Schedules schedules = new Schedules();
+                        for (Station station : selectedStations) {
+                            Schedule stationSchedule = new Schedule();
+                            Calendar arrivalCal = Calendar.getInstance();
+                            arrivalCal.setTime(stationArrivalTimes2.get(station));
+                            Time arrivalTime = new Time(arrivalCal.getTimeInMillis());
+                            stationSchedule.setTimeArrival(arrivalTime);
+                            Calendar depCal = (Calendar) arrivalCal.clone();
+                            depCal.add(Calendar.MINUTE, 2);
+                            Time departureTime = new Time(depCal.getTimeInMillis());
+                            stationSchedule.setTimeDeparture(departureTime);
+                            stationSchedule.setTrip(trip);
+                            stationSchedule.setStation(station);
+                            schedules.add(stationSchedule);
+                        }
+                        this.service.insertSchedules(schedules);
+                        this.tripService.insertTrip(trip);
+                        tripStations.put(tripId, selectedStations);
+                        refreshScheduleData();
+                        this.frame.showSuccessDialog("Modification réussie!", "Le trajet a été modifié avec succès!");
+                        done = true;
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(panel, "Vous avez une erreur lors de la modification du trajet: " + ex.getMessage(), "Erreur!", JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(panel, "Veuillez sélectionner un train et au moins une station.", "Erreur", JOptionPane.WARNING_MESSAGE);
                 }
             } else {
-                this.frame.showWarningDialog("Erreur", "Veuillez sélectionner un train et au moins une station.");
+                done = true;
             }
         }
     }
@@ -939,5 +952,15 @@ public class ScheduleTableView {
         label.setForeground(MainInterfaceFrame.TEXT_COLOR);
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
         return label;
+    }
+
+    
+    private boolean isSameHourMinute(Date d1, Time t2) {
+        Calendar c1 = Calendar.getInstance();
+        c1.setTime(d1);
+        Calendar c2 = Calendar.getInstance();
+        c2.setTime(t2);
+        return c1.get(Calendar.HOUR_OF_DAY) == c2.get(Calendar.HOUR_OF_DAY)
+            && c1.get(Calendar.MINUTE) == c2.get(Calendar.MINUTE);
     }
 }
