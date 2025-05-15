@@ -1,28 +1,28 @@
 package edu.ezip.ing1.pds.gui;
 
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.BorderFactory;
-import javax.swing.border.EmptyBorder;
 import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
 
 import edu.ezip.ing1.pds.business.dto.Train;
-import edu.ezip.ing1.pds.services.TrainService;
-import edu.ezip.ing1.pds.client.commons.NetworkConfig;
 import edu.ezip.ing1.pds.client.commons.ConfigLoader;
+import edu.ezip.ing1.pds.client.commons.NetworkConfig;
+import edu.ezip.ing1.pds.services.TrainService;
 
 public class AddTrainStyle extends JDialog {
     private boolean confirmed = false;
@@ -63,14 +63,8 @@ public class AddTrainStyle extends JDialog {
         messageLabel.setForeground(new Color(44, 62, 80));
         messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        JLabel descLabel = new JLabel("Un nouvel ID sera automatiquement attribué au train.");
-        descLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        descLabel.setForeground(new Color(127, 140, 141));
-        descLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        
 
-        messagePanel.add(messageLabel, BorderLayout.NORTH);
-        messagePanel.add(descLabel, BorderLayout.CENTER);
-        mainPanel.add(messagePanel, BorderLayout.CENTER);
 
     
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
@@ -127,7 +121,10 @@ public class AddTrainStyle extends JDialog {
             messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
             JButton okButton = MainInterfaceFrame.createButton("OK", new Color(46, 204, 113));
-            okButton.addActionListener(e -> successDialog.dispose());
+            okButton.addActionListener(e -> {
+                successDialog.dispose();
+                new TrainTableView(this.frame);
+            });
 
             JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
             buttonPanel.setBackground(Color.WHITE);
@@ -142,18 +139,15 @@ public class AddTrainStyle extends JDialog {
             successDialog.setResizable(false);
             successDialog.setVisible(true);
 
-            if (this.frame != null) {
-                this.frame.refreshTrainTable();
-            }
         } catch (Exception e) {
             String errorMessage = e.getMessage();
             String userFriendlyMessage;
 
             if (errorMessage != null && errorMessage.contains("Connection")) {
-                userFriendlyMessage = "Erreur de connexion au serveur.\n\n" +
-                    "Veuillez vérifier votre connexion réseau et réessayer.";
+                userFriendlyMessage = "Erreur de connexion au serveur\n\n" +
+                    "Veuillez vérifier votre connexion réseau et réessayer";
             } else {
-                userFriendlyMessage = "Une erreur est survenue lors de l'ajout du train.\n\n" +
+                userFriendlyMessage = "Une erreur est survenue lors de l'ajout du train\n\n" +
                     "Détails techniques : " + errorMessage;
             }
 
