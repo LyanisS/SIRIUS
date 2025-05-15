@@ -1,21 +1,34 @@
 package edu.ezip.ing1.pds.gui;
 
-import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.Timer;
+import javax.swing.UIManager;
 
-import edu.ezip.ing1.pds.business.dto.AlertGravity;
-import edu.ezip.ing1.pds.client.commons.ConfigLoader;
-import edu.ezip.ing1.pds.client.commons.NetworkConfig;
-import edu.ezip.ing1.pds.services.TrainService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import edu.ezip.ing1.pds.client.commons.ConfigLoader;
+import edu.ezip.ing1.pds.client.commons.NetworkConfig;
 
 public class MainInterfaceFrame extends JFrame {
 
@@ -36,11 +49,9 @@ public class MainInterfaceFrame extends JFrame {
 
     private JPanel mainContentPanel;
     private JPanel rightBottomNavPanel;
-    private JButton alertButton;
-    private JPanel alertCard;
-    private boolean isAlertCardVisible = false;
     private JLabel timeLabel;
-
+    private String currentView = "trains"; // by deffault we have traffic view
+    
     public MainInterfaceFrame() {
         super("Système de Contrôle Ferroviaire");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -57,18 +68,13 @@ public class MainInterfaceFrame extends JFrame {
         this.createTopPanel();
         this.createMainContentPanel();
         this.createBottomNavigation();
-        this.createAlertCard();
-
-        this.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-            if (isAlertCardVisible && !isClickInCard(e.getPoint())) {
-                hideAlertCard();
-            }
-            }
-        });
 
         this.startTimeUpdate();
+        
+    
+        Timer autoRefreshTimer = new Timer(40000, e -> refreshAll());
+        autoRefreshTimer.start();
+        
         this.setVisible(true);
     }
 
@@ -86,153 +92,37 @@ public class MainInterfaceFrame extends JFrame {
         };
         topPanel.setPreferredSize(new Dimension(0, 80));
 
-
+        // the hour section
         JPanel leftSection = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 15));
         leftSection.setOpaque(false);
         this.timeLabel = new JLabel();
         this.timeLabel.setFont(new Font("Arial", Font.BOLD, 24));
         this.timeLabel.setForeground(Color.WHITE);
-
-        JLabel profileLabel = new JLabel("Profile");
-        profileLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        profileLabel.setForeground(Color.WHITE);
-
         leftSection.add(this.timeLabel);
-        leftSection.add(profileLabel);
 
 
         JPanel rightSection = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 15));
         rightSection.setOpaque(false);
-
-        this.alertButton = new JButton("Messages d'alarmes");
-        this.alertButton.setFont(new Font("Arial", Font.BOLD, 16));
-        this.alertButton.setForeground(Color.WHITE);
-        this.alertButton.setContentAreaFilled(false);
-        this.alertButton.setBorderPainted(false);
-        this.alertButton.setFocusPainted(false);
-        this.alertButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        buttonPanel.setOpaque(false);
-
-        JPanel indicator = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(ALERT_COLOR);
-                g2d.fillOval(0, 0, 10, 10);
-            }
-        };
-        indicator.setPreferredSize(new Dimension(10, 10));
-        indicator.setOpaque(false);
-
-        buttonPanel.add(indicator);
-        buttonPanel.add(this.alertButton);
-        rightSection.add(buttonPanel);
-
-        this.alertButton.addActionListener(e -> toggleAlertCard());
+        
+    
+        JButton refreshButton = createButton("Actualiser", BUTTON_COLOR);
+        refreshButton.setToolTipText("Actualiser");
+        refreshButton.addActionListener(e -> refreshAll());
+        rightSection.add(refreshButton);
 
         topPanel.add(leftSection, BorderLayout.WEST);
         topPanel.add(rightSection, BorderLayout.EAST);
         add(topPanel, BorderLayout.NORTH);
     }
-
-    private void createAlertCard() {
-        this.alertCard = new JPanel();
-        this.alertCard.setLayout(new BoxLayout(alertCard, BoxLayout.Y_AXIS));
-        this.alertCard.setBackground(Color.WHITE);
-        this.alertCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(200, 200, 200)),
-                BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        ));
-
-
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(Color.WHITE);
-        JLabel titleLabel = new JLabel("Messages d'alarmes");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        titleLabel.setForeground(TEXT_COLOR);
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-
-
-        JButton closeButton = new JButton("×");
-        closeButton.setFont(new Font("Arial", Font.BOLD, 20));
-        closeButton.setForeground(TEXT_COLOR);
-        closeButton.setBorderPainted(false);
-        closeButton.setContentAreaFilled(false);
-        closeButton.setFocusPainted(false);
-        closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        closeButton.addActionListener(e -> hideAlertCard());
-        headerPanel.add(closeButton, BorderLayout.EAST);
-
-        this.alertCard.add(headerPanel);
-        this.alertCard.add(Box.createVerticalStrut(10));
-
-        this.alertCard.setVisible(false);
-    }
-
-    private void addAlertItem(String message, AlertGravity alertGravity) {
-        JPanel item = new JPanel(new BorderLayout(10, 0));
-        item.setBackground(new Color(249, 249, 249));
-        item.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 3, 0, 0, alertGravity.getColor()),
-                BorderFactory.createEmptyBorder(12, 15, 12, 15)
-        ));
-
-
-        JPanel leftContent = new JPanel(new BorderLayout(10, 5));
-        leftContent.setOpaque(false);
-
-        JLabel severityLabel = new JLabel(alertGravity.getType());
-        severityLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        severityLabel.setForeground(alertGravity.getColor());
-        severityLabel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(alertGravity.getColor()),
-                BorderFactory.createEmptyBorder(2, 6, 2, 6)
-        ));
-
-
-        JLabel messageLabel = new JLabel(message);
-        messageLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        messageLabel.setForeground(TEXT_COLOR);
-
-        leftContent.add(severityLabel, BorderLayout.NORTH);
-        leftContent.add(messageLabel, BorderLayout.CENTER);
-
-        JPanel rightContent = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-
-        JLabel timeLabel = new JLabel(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
-        timeLabel.setFont(new Font("Arial", Font.PLAIN, 12));
-        timeLabel.setForeground(new Color(150, 150, 150));
-
-        JButton detailsBtn = createButton("Détails");
-        JButton acknowledgeBtn = createButton("Acquitter");
-
-        rightContent.add(timeLabel);
-        rightContent.add(detailsBtn);
-        rightContent.add(acknowledgeBtn);
-
-        item.add(leftContent, BorderLayout.CENTER);
-        item.add(rightContent, BorderLayout.EAST);
-
-
-        item.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                item.setBackground(new Color(245, 245, 245));
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                item.setBackground(new Color(249, 249, 249));
-            }
-        });
-
-        this.alertCard.add(item);
-        this.alertCard.add(Box.createVerticalStrut(5));
+    
+    public void refreshAll() {
+        if (currentView.equals("trains")) {
+            new TrainTableView(this);
+        } else if (currentView.equals("planning")) {
+            new ScheduleTableView(this);
+        } else if (currentView.equals("alarmes")) {
+            new AlertTableView(this);
+        }
     }
 
     public NetworkConfig getNetworkConfig() {
@@ -287,71 +177,21 @@ public class MainInterfaceFrame extends JFrame {
                         (getHeight() + textHeight / 2) / 2);
             }
         };;
-        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setFont(new Font("Arial", Font.BOLD, 16));
         button.setForeground(MainInterfaceFrame.TEXT_COLOR);
         button.setBackground(color);
         button.setBorderPainted(false);
         button.setContentAreaFilled(false);
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        button.setPreferredSize(new Dimension(150, 40));
+        
         return button;
     }
 
     public static JButton createButton(String text) {
         return MainInterfaceFrame.createButton(text, MainInterfaceFrame.BUTTON_COLOR);
-    }
-
-    private void toggleAlertCard() {
-        if (!isAlertCardVisible) {
-            showAlertCard();
-        } else {
-            hideAlertCard();
-        }
-    }
-
-    private void showAlertCard() {
-        if (alertCard != null && alertButton != null) {
-            Point buttonLocation = alertButton.getLocationOnScreen();
-
-            int x = buttonLocation.x - alertCard.getPreferredSize().width + alertButton.getWidth();
-            int y = buttonLocation.y + alertButton.getHeight() + 5;
-
-            if (x < 0) x = 0;
-            if (x + alertCard.getPreferredSize().width > getWidth()) {
-                x = getWidth() - alertCard.getPreferredSize().width;
-            }
-
-            alertCard.setLocation(x, y);
-            alertCard.setVisible(true);
-            isAlertCardVisible = true;
-
-            JLayeredPane layeredPane = getRootPane().getLayeredPane();
-            if (!layeredPane.isAncestorOf(alertCard)) {
-                layeredPane.add(alertCard, JLayeredPane.POPUP_LAYER);
-                alertCard.setSize(alertCard.getPreferredSize());
-            }
-        }
-    }
-
-    private void hideAlertCard() {
-        if (alertCard != null) {
-            alertCard.setVisible(false);
-            isAlertCardVisible = false;
-        }
-    }
-
-    private boolean isClickInCard(Point point) {
-        if (alertCard != null && alertCard.isVisible()) {
-            Point cardScreenLocation = alertCard.getLocationOnScreen();
-            Rectangle cardBounds = new Rectangle(
-                    cardScreenLocation.x,
-                    cardScreenLocation.y,
-                    alertCard.getWidth(),
-                    alertCard.getHeight()
-            );
-            return cardBounds.contains(point);
-        }
-        return false;
     }
 
     private void createMainContentPanel() {
@@ -364,34 +204,41 @@ public class MainInterfaceFrame extends JFrame {
     private void createBottomNavigation() {
         JPanel bottomContainer = new JPanel(new BorderLayout());
         bottomContainer.setBackground(new Color(236, 240, 241));
-        bottomContainer.setPreferredSize(new Dimension(0, 60));
+        bottomContainer.setPreferredSize(new Dimension(0, 70));
 
-        JPanel bottomNavPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10));
+        JPanel bottomNavPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 25, 15));
         bottomNavPanel.setBackground(new Color(236, 240, 241));
 
         JButton btnTrain = MainInterfaceFrame.createButton("Trains");
-        btnTrain.addActionListener(e -> new TrainTableView(this));
+        btnTrain.addActionListener(e -> {
+            currentView = "trains";
+            new TrainTableView(this);
+        });
         bottomNavPanel.add(btnTrain);
 
         JButton btnSchedule = MainInterfaceFrame.createButton("Planning");
-        btnSchedule.addActionListener(e -> new ScheduleTableView(this));
+        btnSchedule.addActionListener(e -> {
+            currentView = "planning";
+            new ScheduleTableView(this);
+        });
         bottomNavPanel.add(btnSchedule);
 
         JButton btnAlerts = MainInterfaceFrame.createButton("Alarmes");
-        btnAlerts.addActionListener(e -> new AlertTableView(this));
+        btnAlerts.addActionListener(e -> {
+            currentView = "alarmes";
+            new AlertTableView(this);
+        });
         bottomNavPanel.add(btnAlerts);
 
 
-        this.rightBottomNavPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        this.rightBottomNavPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
         this.rightBottomNavPanel.setBackground(new Color(236, 240, 241));
 
         bottomContainer.add(bottomNavPanel, BorderLayout.WEST);
         bottomContainer.add(this.rightBottomNavPanel, BorderLayout.EAST);
 
         this.add(bottomContainer, BorderLayout.SOUTH);
-        btnTrain.doClick();
-        // TODO: remove this line when updateRightNavigation is moved to TrainTableView
-        updateRightNavigation("traffic");
+        btnTrain.doClick(); 
     }
 
     public JPanel getMainContentPanel() {
@@ -422,76 +269,5 @@ public class MainInterfaceFrame extends JFrame {
             timeLabel.setText(currentTime.format(formatter));
         });
         timer.start();
-    }
-
-    @Deprecated // TODO: move this method to TrainTableView
-    private void updateRightNavigation(String section) {
-        if (section.equals("traffic")) {
-            JButton addTrainBtn = MainInterfaceFrame.createButton("Ajouter Train");
-            JButton modifyStatusBtn = MainInterfaceFrame.createButton("Modifier Statut");
-            JButton showRoutesBtn = MainInterfaceFrame.createButton("Afficher Trajets");
-            JButton deleteTrainBtn = MainInterfaceFrame.createButton("Supprimer Train");
-
-            addTrainBtn.addActionListener(e -> {
-                AddTrainStyle dialog = new AddTrainStyle(this);
-                dialog.showDialog();
-                dialog.addTrain();
-            });
-
-            deleteTrainBtn.addActionListener(e -> {
-                TrainService service = new TrainService(ConfigLoader.loadConfig(NetworkConfig.class, "network.yaml"));
-                JTable trainTable = findTrainTable();
-                if (trainTable != null) {
-                    int selectedRow = trainTable.getSelectedRow();
-                    if (selectedRow != -1) {
-                        int trainId = (int) trainTable.getValueAt(selectedRow, 0);
-                        if (showConfirmDialog("Confirmer la suppression",
-                                "Êtes-vous sûr de vouloir supprimer le train " + trainId + " ?")) {
-                            try {
-                                service.deleteTrain(trainId);
-                                refreshTrainTable();
-                                showSuccessDialog("Suppression réussie",
-                                        "Le train " + trainId + " a été supprimé avec succès");
-                            } catch (Exception ex) {
-                                showErrorDialog(ex, "Erreur de suppression",
-                                        "Une erreur est survenue lors de la suppression du train " + trainId);
-                            }
-                        }
-                    } else {
-                        showWarningDialog("Aucun train sélectionné",
-                                "Veuillez sélectionner un train à supprimer");
-                    }
-                }
-            });
-
-            List<JButton> buttons = new ArrayList<JButton>();
-            buttons.add(addTrainBtn);
-            buttons.add(modifyStatusBtn);
-            buttons.add(showRoutesBtn);
-            buttons.add(deleteTrainBtn);
-
-            this.registerJButtons(buttons);
-        }
-    }
-
-    @Deprecated // TODO: move this method to TrainTableView
-    private JTable findTrainTable() {
-        Component[] components = this.mainContentPanel.getComponents();
-        for (Component component : components) {
-            if (component instanceof JScrollPane) {
-                JViewport viewport = ((JScrollPane) component).getViewport();
-                if (viewport.getView() instanceof JTable) {
-                    return (JTable) viewport.getView();
-                }
-            }
-        }
-        return null;
-    }
-
-    @Deprecated // TODO: move this method to TrainTableView
-    public void refreshTrainTable() {
-        if (this.mainContentPanel.getComponents().length > 0) {
-            new TrainTableView(this);
-        }
     }
 }

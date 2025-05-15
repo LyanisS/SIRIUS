@@ -1,19 +1,31 @@
 package edu.ezip.ing1.pds.gui;
 
-import edu.ezip.ing1.pds.business.dto.Alert;
-import edu.ezip.ing1.pds.business.dto.Alerts;
-import edu.ezip.ing1.pds.services.AlertService;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
+
+import edu.ezip.ing1.pds.business.dto.Alert;
+import edu.ezip.ing1.pds.business.dto.Alerts;
+import edu.ezip.ing1.pds.services.AlertService;
 
 public class AlertTableView {
     private MainInterfaceFrame frame;
@@ -37,16 +49,16 @@ public class AlertTableView {
 
         List<JButton> buttons = new ArrayList<>();
 
-        JButton addButton = MainInterfaceFrame.createButton("Ajouter une alerte");
+        JButton addButton = MainInterfaceFrame.createButton("Ajouter une alerte", MainInterfaceFrame.SUCCESS_COLOR);
         addButton.addActionListener(e -> showAddAlertDialog());
         buttons.add(addButton);
 
-        JButton deleteButton = MainInterfaceFrame.createButton("Supprimer");
+        JButton deleteButton = MainInterfaceFrame.createButton("Supprimer", MainInterfaceFrame.ACCENT_COLOR);
         deleteButton.addActionListener(e -> deleteSelectedAlert());
         buttons.add(deleteButton);
 
-        JButton refreshButton = MainInterfaceFrame.createButton("Actualiser");
-        refreshButton.addActionListener(e -> refreshAlertData());
+        JButton refreshButton = MainInterfaceFrame.createButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
+        refreshButton.addActionListener(e -> frame.refreshAll());
         buttons.add(refreshButton);
 
         this.frame.registerJButtons(buttons);
