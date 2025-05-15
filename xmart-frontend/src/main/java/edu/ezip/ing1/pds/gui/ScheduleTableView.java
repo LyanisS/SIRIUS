@@ -875,7 +875,11 @@ public class ScheduleTableView {
         if (this.frame.showConfirmDialog("Confirmer la suppression",
                 "Voulez-vous vraiment supprimer le trajet #" + tripId + " ?")) {
             try {
+                // First, delete all schedules associated with this trip
                 this.service.deleteSchedule(tripId);
+                
+                // Then, delete the trip itself
+                this.tripService.deleteTrip(tripId);
                 
                 tripStations.remove(tripId);
 
