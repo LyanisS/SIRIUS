@@ -195,7 +195,6 @@ public class ScheduleTableView {
         try {
             tableModel.setRowCount(0);
 
-            // Récupérer les schedules pour avoir les horaires
             Schedules schedules = this.service.selectSchedules();
             Map<Integer, List<Schedule>> schedulesByTrip = new HashMap<>();
 
@@ -209,7 +208,6 @@ public class ScheduleTableView {
                 }
             }
             
-            // Récupérer tous les Trip directement
             Trips trips = this.tripService.selectTrips();
             
             if (trips != null && trips.getTrips() != null) {
@@ -217,19 +215,15 @@ public class ScheduleTableView {
                     int trainId = trip.getTrain() != null ? trip.getTrain().getId() : -1;
                     int tripId = trip.getId();
                     
-                    // Déterminer la direction (aller/retour) en fonction de l'ordre des stations
                     String direction = "Non défini";
                     
-                    // Récupérer les stations et les heures d'arrivée
                     String stationsStr = "À définir";
                     String timesStr = "Non planifié";
                     
                     List<Schedule> tripSchedules = schedulesByTrip.get(tripId);
                     if (tripSchedules != null && !tripSchedules.isEmpty()) {
-                        // Trier les schedules par heure d'arrivée
                         tripSchedules.sort((s1, s2) -> s1.getTimeArrival().compareTo(s2.getTimeArrival()));
                         
-                        // Construire la liste des stations
                         StringBuilder stationsBuilder = new StringBuilder();
                         StringBuilder timesBuilder = new StringBuilder();
                         
@@ -249,12 +243,10 @@ public class ScheduleTableView {
                         stationsStr = stationsBuilder.toString();
                         timesStr = timesBuilder.toString();
                         
-                        // Déterminer la direction en fonction de l'ordre des stations
                         if (tripSchedules.size() >= 2) {
                             Station firstStation = tripSchedules.get(0).getStation();
                             Station lastStation = tripSchedules.get(tripSchedules.size() - 1).getStation();
                             
-                            // Logique simple: si la première station est alphabétiquement avant la dernière, c'est aller
                             if (firstStation.getName().compareTo(lastStation.getName()) < 0) {
                                 direction = "Aller";
                             } else {
@@ -262,7 +254,6 @@ public class ScheduleTableView {
                             }
                         }
                     } else {
-                        // Utiliser les données locales si disponibles
                         List<Station> stations = tripStations.get(tripId);
                         if (stations != null && !stations.isEmpty()) {
                             StringBuilder sb = new StringBuilder();
@@ -274,7 +265,6 @@ public class ScheduleTableView {
                             }
                             stationsStr = sb.toString();
                             
-                            // Déterminer la direction en fonction de l'ordre des stations
                             if (stations.size() >= 2) {
                                 Station firstStation = stations.get(0);
                                 Station lastStation = stations.get(stations.size() - 1);
@@ -343,7 +333,7 @@ public class ScheduleTableView {
 
     private void openAddScheduleDialog() {
         JPanel panel = createFormPanel("Ajouter un nouveau trajet");
-        panel.setPreferredSize(new Dimension(500, 600)); // Agrandir le formulaire
+        panel.setPreferredSize(new Dimension(500, 600));
         
         JLabel trainLabel = createFormLabel("Train:");
         panel.add(trainLabel);
@@ -352,7 +342,7 @@ public class ScheduleTableView {
         JComboBox<String> trainComboBox = new JComboBox<>();
         trainComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         trainComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        trainComboBox.setFont(new Font("Arial", Font.PLAIN, 14)); // Augmenter la police
+        trainComboBox.setFont(new Font("Arial", Font.PLAIN, 14));
         
         List<Train> trainList = new ArrayList<>();
         try {
@@ -369,7 +359,7 @@ public class ScheduleTableView {
         }
         
         panel.add(trainComboBox);
-        panel.add(Box.createRigidArea(new Dimension(0, 20))); // Plus d'espace
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
         
         JLabel directionLabel = createFormLabel("Sens de circulation:");
         panel.add(directionLabel);
@@ -377,7 +367,7 @@ public class ScheduleTableView {
 
         JPanel directionPanel = new JPanel();
         directionPanel.setLayout(new BoxLayout(directionPanel, BoxLayout.X_AXIS));
-        directionPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35)); // Plus grand
+        directionPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
         directionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         directionPanel.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
         
@@ -386,35 +376,34 @@ public class ScheduleTableView {
         JRadioButton retourRadio = new JRadioButton("Retour");
         allerRadio.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
         retourRadio.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
-        allerRadio.setFont(new Font("Arial", Font.PLAIN, 14)); // Augmenter la police
-        retourRadio.setFont(new Font("Arial", Font.PLAIN, 14)); // Augmenter la police
-        allerRadio.setSelected(true);  // Par défaut sélectionné
+        allerRadio.setFont(new Font("Arial", Font.PLAIN, 14));
+        retourRadio.setFont(new Font("Arial", Font.PLAIN, 14));
+        allerRadio.setSelected(true);
         
         directionGroup.add(allerRadio);
         directionGroup.add(retourRadio);
         directionPanel.add(allerRadio);
-        directionPanel.add(Box.createRigidArea(new Dimension(50, 0))); // Plus d'espace
+        directionPanel.add(Box.createRigidArea(new Dimension(50, 0)));
         directionPanel.add(retourRadio);
         
         panel.add(directionPanel);
-        panel.add(Box.createRigidArea(new Dimension(0, 20))); // Plus d'espace
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
         
         JLabel tripLabel = createFormLabel("ID Trajet:");
         panel.add(tripLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
 
         JTextField tripField = new JTextField();
-        tripField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35)); // Plus grand
+        tripField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
         tripField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        tripField.setFont(new Font("Arial", Font.PLAIN, 14)); // Augmenter la police
+        tripField.setFont(new Font("Arial", Font.PLAIN, 14));
         panel.add(tripField);
-        panel.add(Box.createRigidArea(new Dimension(0, 20))); // Plus d'espace
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
         
         JLabel stationsLabel = createFormLabel("Stations desservies:");
         panel.add(stationsLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
 
-        // Création d'un panel pour contenir la liste des stations et leurs horaires
         JPanel stationsMainPanel = new JPanel();
         stationsMainPanel.setLayout(new BoxLayout(stationsMainPanel, BoxLayout.Y_AXIS));
         stationsMainPanel.setBackground(Color.WHITE);
@@ -422,32 +411,29 @@ public class ScheduleTableView {
         
         JScrollPane stationsScrollPane = new JScrollPane(stationsMainPanel);
         stationsScrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
-        stationsScrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 350)); // Plus grand pour accommoder les horaires
-        stationsScrollPane.setPreferredSize(new Dimension(450, 350)); // Définir une taille préférée
+        stationsScrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 350));
+        stationsScrollPane.setPreferredSize(new Dimension(450, 350));
         stationsScrollPane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         
         List<Station> stationsList = getStations();
         List<JCheckBox> stationCheckboxes = new ArrayList<>();
-        Map<JCheckBox, JPanel> stationTimesPanels = new HashMap<>(); // Pour stocker les panels d'horaires par station
-        Map<JCheckBox, JSpinner> arrivalTimeSpinners = new HashMap<>(); // Pour stocker les spinners d'heure d'arrivée
+        Map<JCheckBox, JPanel> stationTimesPanels = new HashMap<>();
+        Map<JCheckBox, JSpinner> arrivalTimeSpinners = new HashMap<>();
         
-        // Créer un modèle de temps par défaut pour les spinners
         Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 8); // Commencer à 8h00 par défaut
+        cal.set(Calendar.HOUR_OF_DAY, 8);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         Date initDate = cal.getTime();
         SpinnerDateModel timeModel = new SpinnerDateModel(initDate, null, null, Calendar.MINUTE);
         
         for (Station station : stationsList) {
-            // Panel pour chaque station avec checkbox et horaires
             JPanel stationPanel = new JPanel();
             stationPanel.setLayout(new BoxLayout(stationPanel, BoxLayout.Y_AXIS));
             stationPanel.setBackground(Color.WHITE);
             stationPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
             stationPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
             
-            // Checkbox pour la station
             JCheckBox checkbox = new JCheckBox(station.getName());
             checkbox.setBackground(Color.WHITE);
             checkbox.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -456,20 +442,17 @@ public class ScheduleTableView {
             
             stationPanel.add(checkbox);
             
-            // Panel pour les horaires (initialement invisible)
             JPanel timePanel = new JPanel();
             timePanel.setLayout(new BoxLayout(timePanel, BoxLayout.X_AXIS));
             timePanel.setBackground(Color.WHITE);
             timePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-            timePanel.setVisible(false); // Caché par défaut
+            timePanel.setVisible(false);
             stationTimesPanels.put(checkbox, timePanel);
             
-            // Label pour l'heure d'arrivée
             JLabel arrivalLabel = new JLabel("Heure d'arrivée: ");
             arrivalLabel.setFont(new Font("Arial", Font.PLAIN, 12));
             timePanel.add(arrivalLabel);
             
-            // Spinner pour l'heure d'arrivée
             JSpinner arrivalSpinner = new JSpinner(new SpinnerDateModel(initDate, null, null, Calendar.MINUTE));
             JSpinner.DateEditor timeEditor = new JSpinner.DateEditor(arrivalSpinner, "HH:mm");
             arrivalSpinner.setEditor(timeEditor);
@@ -478,18 +461,14 @@ public class ScheduleTableView {
             timePanel.add(arrivalSpinner);
             arrivalTimeSpinners.put(checkbox, arrivalSpinner);
             
-            // Ajouter un peu d'espace entre les éléments
             timePanel.add(Box.createHorizontalStrut(10));
             
-            // Ajouter le panel d'horaires au panel de la station
             stationPanel.add(Box.createRigidArea(new Dimension(0, 5)));
             stationPanel.add(timePanel);
             stationPanel.add(Box.createRigidArea(new Dimension(0, 5)));
             
-            // Ajouter le panel de la station au panel principal
             stationsMainPanel.add(stationPanel);
             
-            // Ajouter un listener pour afficher/masquer les horaires
             checkbox.addActionListener(e -> {
                 timePanel.setVisible(checkbox.isSelected());
                 stationsMainPanel.revalidate();
@@ -498,36 +477,32 @@ public class ScheduleTableView {
         }
         
         panel.add(stationsScrollPane);
-        panel.add(Box.createRigidArea(new Dimension(0, 20))); // Plus d'espace
+        panel.add(Box.createRigidArea(new Dimension(0, 20)));
         
-        // Bouton pour calculer automatiquement les horaires
         JButton autoScheduleButton = new JButton("Calculer horaires automatiquement");
         autoScheduleButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         autoScheduleButton.setFont(new Font("Arial", Font.PLAIN, 14));
         autoScheduleButton.addActionListener(e -> {
-            // Trouver toutes les stations sélectionnées
             List<JCheckBox> selectedCheckboxes = stationCheckboxes.stream()
                     .filter(JCheckBox::isSelected)
                     .collect(Collectors.toList());
             
             if (selectedCheckboxes.size() > 0) {
-                // Récupérer l'heure de la première station comme base
                 Date firstTime = (Date) arrivalTimeSpinners.get(selectedCheckboxes.get(0)).getValue();
                 Calendar baseCal = Calendar.getInstance();
                 baseCal.setTime(firstTime);
                 
-                // Calculer les horaires pour les autres stations (espacés de 5 minutes)
                 for (int i = 1; i < selectedCheckboxes.size(); i++) {
                     JCheckBox cb = selectedCheckboxes.get(i);
                     JSpinner spinner = arrivalTimeSpinners.get(cb);
                     
-                    baseCal.add(Calendar.MINUTE, 5); // Ajouter 5 minutes
+                    baseCal.add(Calendar.MINUTE, 5);
                     spinner.setValue(baseCal.getTime());
                 }
             }
         });
         panel.add(autoScheduleButton);
-        panel.add(Box.createRigidArea(new Dimension(0, 10))); // Plus d'espace
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
 
         JOptionPane optionPane = new JOptionPane(
                 panel,
@@ -535,8 +510,8 @@ public class ScheduleTableView {
                 JOptionPane.OK_CANCEL_OPTION);
         
         JDialog dialog = optionPane.createDialog(this.frame, "Ajouter un trajet");
-        dialog.setMinimumSize(new Dimension(550, 700)); // Définir une taille minimum plus grande
-        dialog.setResizable(true); // Permettre le redimensionnement
+        dialog.setMinimumSize(new Dimension(550, 700));
+        dialog.setResizable(true);
         dialog.setVisible(true);
         
         Integer result = (Integer) optionPane.getValue();
@@ -544,7 +519,6 @@ public class ScheduleTableView {
             int selectedTrainIndex = trainComboBox.getSelectedIndex();
             String tripId = tripField.getText();
 
-            // Récupérer les stations sélectionnées avec leurs horaires
             List<Station> selectedStations = new ArrayList<>();
             Map<Station, Date> stationArrivalTimes = new HashMap<>();
             
@@ -554,7 +528,6 @@ public class ScheduleTableView {
                     Station station = new Station(checkbox.getText());
                     selectedStations.add(station);
                     
-                    // Récupérer l'heure d'arrivée
                     Date arrivalTime = (Date) arrivalTimeSpinners.get(checkbox).getValue();
                     stationArrivalTimes.put(station, arrivalTime);
                 }
@@ -566,7 +539,6 @@ public class ScheduleTableView {
                     Trip trip = new Trip(tripIdInt, trainList.get(selectedTrainIndex));
                     String direction = allerRadio.isSelected() ? "Aller" : "Retour";
                     
-                    // Vérifier que le Trip n'existe pas déjà
                     Trips existingTrips = this.tripService.selectTrips();
                     boolean tripExists = false;
                     
@@ -584,22 +556,18 @@ public class ScheduleTableView {
                         return;
                     }
                     
-                    // Insérer le Trip
                     this.tripService.insertTrip(trip);
                     
-                    // Créer un schedule pour chaque station avec l'horaire défini
                     Schedules schedules = new Schedules();
                     
                     for (Station station : selectedStations) {
                         Schedule stationSchedule = new Schedule();
                         
-                        // Utiliser l'heure d'arrivée définie par l'utilisateur
                         Calendar arrivalCal = Calendar.getInstance();
                         arrivalCal.setTime(stationArrivalTimes.get(station));
                         Time arrivalTime = new Time(arrivalCal.getTimeInMillis());
                         stationSchedule.setTimeArrival(arrivalTime);
                         
-                        // Heure de départ = heure d'arrivée + 2 minutes
                         Calendar depCal = (Calendar) arrivalCal.clone();
                         depCal.add(Calendar.MINUTE, 2);
                         Time departureTime = new Time(depCal.getTimeInMillis());
@@ -610,10 +578,8 @@ public class ScheduleTableView {
                         schedules.add(stationSchedule);
                     }
                     
-                    // Insérer les schedules dans la base de données
                     this.service.insertSchedules(schedules);
                     
-                    // Stocker aussi localement pour l'affichage
                     tripStations.put(tripIdInt, selectedStations);
 
                     refreshScheduleData();
@@ -643,7 +609,6 @@ public class ScheduleTableView {
         String stationsStr = (String) tableModel.getValueAt(selectedRow, 2);
         String timesStr = (String) tableModel.getValueAt(selectedRow, 3);
 
-        // Récupérer les horaires existants pour ce trajet
         Map<String, Time> stationArrivalTimes = new HashMap<>();
         try {
             Schedules schedules = this.service.selectSchedules();
@@ -659,7 +624,7 @@ public class ScheduleTableView {
         }
 
         JPanel panel = createFormPanel("Modifier le trajet");
-        panel.setPreferredSize(new Dimension(500, 600)); // Agrandir le formulaire
+        panel.setPreferredSize(new Dimension(500, 600));
 
         JLabel trainLabel = createFormLabel("Train:");
         panel.add(trainLabel);
@@ -668,7 +633,7 @@ public class ScheduleTableView {
         JComboBox<String> trainComboBox = new JComboBox<>();
         trainComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         trainComboBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        trainComboBox.setFont(new Font("Arial", Font.PLAIN, 14)); // Augmenter la police
+        trainComboBox.setFont(new Font("Arial", Font.PLAIN, 14));
         
         List<Train> trainList = new ArrayList<>();
         int selectedTrainIndex = -1;
@@ -704,7 +669,7 @@ public class ScheduleTableView {
         tripIdField.setEditable(false);
         tripIdField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         tripIdField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        tripIdField.setFont(new Font("Arial", Font.PLAIN, 14)); // Augmenter la police
+        tripIdField.setFont(new Font("Arial", Font.PLAIN, 14));
         panel.add(tripIdField);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
 
@@ -712,7 +677,6 @@ public class ScheduleTableView {
         panel.add(stationsLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
 
-        // Création d'un panel pour contenir la liste des stations et leurs horaires
         JPanel stationsMainPanel = new JPanel();
         stationsMainPanel.setLayout(new BoxLayout(stationsMainPanel, BoxLayout.Y_AXIS));
         stationsMainPanel.setBackground(Color.WHITE);
@@ -720,15 +684,14 @@ public class ScheduleTableView {
         
         JScrollPane stationsScrollPane = new JScrollPane(stationsMainPanel);
         stationsScrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
-        stationsScrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 350)); // Plus grand pour accommoder les horaires
-        stationsScrollPane.setPreferredSize(new Dimension(450, 350)); // Définir une taille préférée
+        stationsScrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 350));
+        stationsScrollPane.setPreferredSize(new Dimension(450, 350));
         stationsScrollPane.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         
         List<Station> stationsList = getStations();
         List<JCheckBox> stationCheckboxes = new ArrayList<>();
         Map<JCheckBox, JSpinner> arrivalTimeSpinners = new HashMap<>();
         
-        // Extraire les noms des stations déjà sélectionnées
         List<String> selectedStationNames = new ArrayList<>();
         if (stationsStr != null && !stationsStr.equals("À définir")) {
             String[] stationNames = stationsStr.split(" → ");
@@ -738,46 +701,39 @@ public class ScheduleTableView {
         }
         
         for (Station station : stationsList) {
-            // Panel pour chaque station avec checkbox et horaires
             JPanel stationPanel = new JPanel();
             stationPanel.setLayout(new BoxLayout(stationPanel, BoxLayout.Y_AXIS));
             stationPanel.setBackground(Color.WHITE);
             stationPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
             stationPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
             
-            // Checkbox pour la station
             JCheckBox checkbox = new JCheckBox(station.getName());
             checkbox.setBackground(Color.WHITE);
             checkbox.setFont(new Font("Arial", Font.PLAIN, 14));
             checkbox.setAlignmentX(Component.LEFT_ALIGNMENT);
             
-            // Vérifier si la station est déjà sélectionnée
             boolean isSelected = selectedStationNames.contains(station.getName());
             checkbox.setSelected(isSelected);
             
             stationCheckboxes.add(checkbox);
             stationPanel.add(checkbox);
             
-            // Panel pour les horaires
             JPanel timePanel = new JPanel();
             timePanel.setLayout(new BoxLayout(timePanel, BoxLayout.X_AXIS));
             timePanel.setBackground(Color.WHITE);
             timePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-            timePanel.setVisible(isSelected); // Visible si la station est sélectionnée
+            timePanel.setVisible(isSelected);
             
-            // Label pour l'heure d'arrivée
             JLabel arrivalLabel = new JLabel("Heure d'arrivée: ");
             arrivalLabel.setFont(new Font("Arial", Font.PLAIN, 12));
             timePanel.add(arrivalLabel);
             
-            // Spinner pour l'heure d'arrivée
             Calendar cal = Calendar.getInstance();
             
-            // Utiliser l'horaire existant si disponible
             if (stationArrivalTimes.containsKey(station.getName())) {
                 cal.setTime(stationArrivalTimes.get(station.getName()));
             } else {
-                cal.set(Calendar.HOUR_OF_DAY, 8); // Heure par défaut
+                cal.set(Calendar.HOUR_OF_DAY, 8);
                 cal.set(Calendar.MINUTE, 0);
                 cal.set(Calendar.SECOND, 0);
             }
@@ -791,15 +747,12 @@ public class ScheduleTableView {
             timePanel.add(arrivalSpinner);
             arrivalTimeSpinners.put(checkbox, arrivalSpinner);
             
-            // Ajouter le panel d'horaires au panel de la station
             stationPanel.add(Box.createRigidArea(new Dimension(0, 5)));
             stationPanel.add(timePanel);
             stationPanel.add(Box.createRigidArea(new Dimension(0, 5)));
             
-            // Ajouter le panel de la station au panel principal
             stationsMainPanel.add(stationPanel);
             
-            // Ajouter un listener pour afficher/masquer les horaires
             checkbox.addActionListener(e -> {
                 timePanel.setVisible(checkbox.isSelected());
                 stationsMainPanel.revalidate();
@@ -810,28 +763,24 @@ public class ScheduleTableView {
         panel.add(stationsScrollPane);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         
-        // Bouton pour calculer automatiquement les horaires
         JButton autoScheduleButton = new JButton("Recalculer horaires automatiquement");
         autoScheduleButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         autoScheduleButton.setFont(new Font("Arial", Font.PLAIN, 14));
         autoScheduleButton.addActionListener(e -> {
-            // Trouver toutes les stations sélectionnées
             List<JCheckBox> selectedCheckboxes = stationCheckboxes.stream()
                     .filter(JCheckBox::isSelected)
                     .collect(Collectors.toList());
             
             if (selectedCheckboxes.size() > 0) {
-                // Récupérer l'heure de la première station comme base
                 Date firstTime = (Date) arrivalTimeSpinners.get(selectedCheckboxes.get(0)).getValue();
                 Calendar baseCal = Calendar.getInstance();
                 baseCal.setTime(firstTime);
                 
-                // Calculer les horaires pour les autres stations (espacés de 5 minutes)
                 for (int i = 1; i < selectedCheckboxes.size(); i++) {
                     JCheckBox cb = selectedCheckboxes.get(i);
                     JSpinner spinner = arrivalTimeSpinners.get(cb);
                     
-                    baseCal.add(Calendar.MINUTE, 5); // Ajouter 5 minutes
+                    baseCal.add(Calendar.MINUTE, 5);
                     spinner.setValue(baseCal.getTime());
                 }
             }
@@ -845,15 +794,14 @@ public class ScheduleTableView {
                 JOptionPane.OK_CANCEL_OPTION);
         
         JDialog dialog = optionPane.createDialog(this.frame, "Modifier un trajet");
-        dialog.setMinimumSize(new Dimension(550, 700)); // Définir une taille minimum plus grande
-        dialog.setResizable(true); // Permettre le redimensionnement
+        dialog.setMinimumSize(new Dimension(550, 700));
+        dialog.setResizable(true);
         dialog.setVisible(true);
         
         Integer result = (Integer) optionPane.getValue();
         if (result != null && result == JOptionPane.OK_OPTION) {
             int selectedTrainIdxNew = trainComboBox.getSelectedIndex();
             
-            // Récupérer les stations sélectionnées avec leurs horaires
             List<Station> selectedStations = new ArrayList<>();
             Map<Station, Date> stationArrivalTimes2 = new HashMap<>();
             
@@ -863,7 +811,6 @@ public class ScheduleTableView {
                     Station station = new Station(checkbox.getText());
                     selectedStations.add(station);
                     
-                    // Récupérer l'heure d'arrivée
                     Date arrivalTime = (Date) arrivalTimeSpinners.get(checkbox).getValue();
                     stationArrivalTimes2.put(station, arrivalTime);
                 }
@@ -873,22 +820,18 @@ public class ScheduleTableView {
                 try {
                     Trip trip = new Trip(tripId, trainList.get(selectedTrainIdxNew));
                     
-                    // Supprimer les anciens schedules
                     this.service.deleteSchedule(tripId);
                     
-                    // Créer de nouveaux schedules avec les horaires mis à jour
                     Schedules schedules = new Schedules();
                     
                     for (Station station : selectedStations) {
                         Schedule stationSchedule = new Schedule();
                         
-                        // Utiliser l'heure d'arrivée définie par l'utilisateur
                         Calendar arrivalCal = Calendar.getInstance();
                         arrivalCal.setTime(stationArrivalTimes2.get(station));
                         Time arrivalTime = new Time(arrivalCal.getTimeInMillis());
                         stationSchedule.setTimeArrival(arrivalTime);
                         
-                        // Heure de départ = heure d'arrivée + 2 minutes
                         Calendar depCal = (Calendar) arrivalCal.clone();
                         depCal.add(Calendar.MINUTE, 2);
                         Time departureTime = new Time(depCal.getTimeInMillis());
@@ -899,13 +842,10 @@ public class ScheduleTableView {
                         schedules.add(stationSchedule);
                     }
                     
-                    // Insérer les nouveaux schedules
                     this.service.insertSchedules(schedules);
                     
-                    // Mettre à jour le trajet
                     this.tripService.insertTrip(trip);
                     
-                    // Stocker aussi localement pour l'affichage
                     tripStations.put(tripId, selectedStations);
 
                     refreshScheduleData();
@@ -951,7 +891,7 @@ public class ScheduleTableView {
 
     private JLabel createFormLabel(String text) {
         JLabel label = new JLabel(text);
-        label.setFont(new Font("Arial", Font.BOLD, 14)); // Police plus grande et en gras
+        label.setFont(new Font("Arial", Font.BOLD, 14));
         label.setForeground(MainInterfaceFrame.TEXT_COLOR);
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
         return label;
