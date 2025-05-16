@@ -93,12 +93,6 @@ public class ScheduleTableView {
         deleteButton.addActionListener(e -> deleteSchedule());
         buttons.add(deleteButton);
 
-        JButton refreshButton = MainInterfaceFrame.createButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
-        refreshButton.addActionListener(e -> refreshScheduleData());
-        buttons.add(refreshButton);
-
-        this.frame.registerJButtons(buttons);
-
         this.service = new ScheduleService(this.frame.getNetworkConfig());
         this.tripService = new TripService(this.frame.getNetworkConfig());
         this.refreshScheduleData();
@@ -928,7 +922,7 @@ public class ScheduleTableView {
         int tripId = (int) tableModel.getValueAt(selectedRow, 1);
 
         if (this.frame.showConfirmDialog("Confirmer la suppression",
-                "Voulez-vous vraiment supprimer le trajet #" + tripId + " ?")) {
+                "Voulez-vous vraiment supprimer le trajet " + tripId + " ?")) {
             try {
                 this.service.deleteSchedule(tripId);
                 
