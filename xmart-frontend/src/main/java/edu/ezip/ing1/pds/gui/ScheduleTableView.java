@@ -100,7 +100,7 @@ public class ScheduleTableView {
 
     private void createStyledTable() {
         String[] columnNames = {
-            "ID Train",
+            "Numéro Train",
             "ID Trajet",
             "Stations desservies",
             "Heures d'arrivée",
@@ -161,7 +161,7 @@ public class ScheduleTableView {
 
         JTableHeader header = table.getTableHeader();
         header.setBackground(MainInterfaceFrame.TABLE_HEADER_COLOR);
-        header.setForeground(Color.BLACK);
+        header.setForeground(Color.BLUE);
         header.setFont(new Font("Arial", Font.BOLD, 13));
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Color.DARK_GRAY));
         header.setPreferredSize(new Dimension(0, 40));
