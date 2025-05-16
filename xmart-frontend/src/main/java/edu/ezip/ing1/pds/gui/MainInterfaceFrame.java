@@ -278,7 +278,6 @@ public class MainInterfaceFrame extends JFrame {
         });
         bottomNavPanel.add(btnAlerts);
 
-
         this.rightBottomNavPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
         this.rightBottomNavPanel.setBackground(new Color(236, 240, 241));
 
