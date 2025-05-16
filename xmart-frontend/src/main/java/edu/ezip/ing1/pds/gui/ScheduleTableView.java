@@ -11,10 +11,14 @@ import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
@@ -93,10 +97,6 @@ public class ScheduleTableView {
         JButton deleteButton = MainInterfaceFrame.createButton("Supprimer trajet", MainInterfaceFrame.ACCENT_COLOR);
         deleteButton.addActionListener(e -> deleteSchedule());
         buttons.add(deleteButton);
-
-        JButton refreshButton = MainInterfaceFrame.createButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
-        refreshButton.addActionListener(e -> refreshScheduleData());
-        buttons.add(refreshButton);
         
         if (filteredTrainId != null) {
             JButton clearFilterButton = MainInterfaceFrame.createButton("Effacer filtre", new Color(255, 165, 0)); // Orange
@@ -221,13 +221,42 @@ public class ScheduleTableView {
             Schedules schedules = this.service.selectSchedules();
             Map<Integer, List<Schedule>> schedulesByTrip = new HashMap<>();
 
+            
             if (schedules != null && schedules.getSchedules() != null) {
+                
+                Set<Integer> uniqueTripIds = new HashSet<>();
+                
                 for (Schedule schedule : schedules.getSchedules()) {
                     int tripId = schedule.getTrip().getId();
+                    uniqueTripIds.add(tripId);
+                    
                     if (!schedulesByTrip.containsKey(tripId)) {
                         schedulesByTrip.put(tripId, new ArrayList<>());
                     }
                     schedulesByTrip.get(tripId).add(schedule);
+                }
+                
+                
+                for (Integer tripId : uniqueTripIds) {
+                    List<Schedule> tripSchedules = schedulesByTrip.get(tripId);
+                    
+                    
+                    tripSchedules.sort(Comparator.comparing(Schedule::getId).reversed());
+                    
+                   
+                    Map<String, Schedule> uniqueStations = new LinkedHashMap<>();
+                    for (Schedule schedule : tripSchedules) {
+                        String stationName = schedule.getStation().getName();
+                        if (!uniqueStations.containsKey(stationName)) {
+                            uniqueStations.put(stationName, schedule);
+                        }
+                    }
+                    
+                    
+                    List<Schedule> uniqueSchedules = new ArrayList<>(uniqueStations.values());
+                    
+                    uniqueSchedules.sort(Comparator.comparing(Schedule::getTimeArrival));
+                    schedulesByTrip.put(tripId, uniqueSchedules);
                 }
             }
             
@@ -249,17 +278,24 @@ public class ScheduleTableView {
                         StringBuilder stationsBuilder = new StringBuilder();
                         StringBuilder timesBuilder = new StringBuilder();
                         
+                        Set<String> addedStations = new HashSet<>();
+                        
                         for (Schedule sch : tripSchedules) {
-                            if (stationsBuilder.length() > 0) {
-                                stationsBuilder.append(" → ");
-                                timesBuilder.append(", ");
-                            }
-                            stationsBuilder.append(sch.getStation().getName());
+                            String stationName = sch.getStation().getName();
                             
-                            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
-                            String arrivalTime = sch.getTimeArrival() != null ? 
-                                    timeFormat.format(sch.getTimeArrival()) : "?";
-                            timesBuilder.append(arrivalTime);
+                            if (!addedStations.contains(stationName)) {
+                                if (stationsBuilder.length() > 0) {
+                                    stationsBuilder.append(" → ");
+                                    timesBuilder.append(", ");
+                                }
+                                stationsBuilder.append(stationName);
+                                addedStations.add(stationName);
+                                
+                                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                                String arrivalTime = sch.getTimeArrival() != null ? 
+                                        timeFormat.format(sch.getTimeArrival()) : "?";
+                                timesBuilder.append(arrivalTime);
+                            }
                         }
                         
                         stationsStr = stationsBuilder.toString();
@@ -700,10 +736,13 @@ public class ScheduleTableView {
             this.frame.showErrorDialog(ex, "Erreur", "Erreur lors de la récupération des trains");
         }
         
+        
+        trainComboBox.setEnabled(false);
+        
         panel.add(trainComboBox);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
 
-        JLabel tripIdLabel = createFormLabel("ID Trajet:");
+        JLabel tripIdLabel = createFormLabel("Numéro Trajet:");
         panel.add(tripIdLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
 
@@ -805,6 +844,11 @@ public class ScheduleTableView {
         panel.add(stationsScrollPane);
         panel.add(Box.createRigidArea(new Dimension(0, 15)));
         
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
+        buttonPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
         JButton autoScheduleButton = new JButton("Recalculer horaires automatiquement");
         autoScheduleButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         autoScheduleButton.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -827,7 +871,9 @@ public class ScheduleTableView {
                 }
             }
         });
-        panel.add(autoScheduleButton);
+        
+        buttonPanel.add(autoScheduleButton);
+        panel.add(buttonPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
 
         boolean done = false;
@@ -856,26 +902,27 @@ public class ScheduleTableView {
                 }
                 if (selectedTrainIdxNew != -1 && !selectedStations.isEmpty()) {
                     try {
+                        Trip trip = new Trip(tripId, trainList.get(selectedTrainIdxNew));
+                        
                        
                         Schedules allSchedules = this.service.selectSchedules();
+                        
                         if (allSchedules != null && allSchedules.getSchedules() != null) {
+                            List<String> existingStationNames = new ArrayList<>();
+                            
                             for (Schedule existing : allSchedules.getSchedules()) {
-                                
-                                if (existing.getTrip().getTrain().getId() == trainList.get(selectedTrainIdxNew).getId() && existing.getTrip().getId() != tripId) {
-                                    for (Station station : selectedStations) {
-                                        Date newArrival = stationArrivalTimes2.get(station);
-                                        Time existingArrival = existing.getTimeArrival();
-                                        if (existingArrival != null && newArrival != null && isSameHourMinute(newArrival, existingArrival)) {
-                                            JOptionPane.showMessageDialog(panel, "Le train est déjà prévu à une autre station à " +
-                                                new java.text.SimpleDateFormat("HH:mm").format(newArrival) + ". Veuillez choisir un autre horaire.", "Conflit d'horaires", JOptionPane.WARNING_MESSAGE);
-                                            continue;
-                                        }
-                                    }
+                                if (existing.getTrip().getId() == tripId) {
+                                    existingStationNames.add(existing.getStation().getName());
                                 }
                             }
+                            
+                            System.out.println("Stations existantes pour ce trajet: " + String.join(", ", existingStationNames));
                         }
-                        Trip trip = new Trip(tripId, trainList.get(selectedTrainIdxNew));
-                        this.service.deleteSchedule(tripId);
+                        
+                       
+                        this.service.deleteSchedulesByTripId(tripId);
+                        
+                        
                         Schedules schedules = new Schedules();
                         for (Station station : selectedStations) {
                             Schedule stationSchedule = new Schedule();
@@ -895,11 +942,13 @@ public class ScheduleTableView {
                             
                             schedules.add(stationSchedule);
                         }
+                        
                         this.service.insertSchedules(schedules);
-                        this.tripService.insertTrip(trip);
+                        
                         tripStations.put(tripId, selectedStations);
+                        
                         refreshScheduleData();
-                        this.frame.showSuccessDialog("Modification réussie!", "Le trajet a été modifié avec succès!");
+                        this.frame.showSuccessDialog("Modification réussie!", "Les horaires du trajet ont été modifiés avec succès!");
                         done = true;
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -1016,17 +1065,24 @@ public class ScheduleTableView {
                         StringBuilder stationsBuilder = new StringBuilder();
                         StringBuilder timesBuilder = new StringBuilder();
                         
+                        Set<String> addedStations = new HashSet<>();
+                        
                         for (Schedule sch : tripSchedules) {
-                            if (stationsBuilder.length() > 0) {
-                                stationsBuilder.append(" → ");
-                                timesBuilder.append(", ");
-                            }
-                            stationsBuilder.append(sch.getStation().getName());
+                            String stationName = sch.getStation().getName();
                             
-                            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
-                            String arrivalTime = sch.getTimeArrival() != null ? 
-                                    timeFormat.format(sch.getTimeArrival()) : "?";
-                            timesBuilder.append(arrivalTime);
+                            if (!addedStations.contains(stationName)) {
+                                if (stationsBuilder.length() > 0) {
+                                    stationsBuilder.append(" → ");
+                                    timesBuilder.append(", ");
+                                }
+                                stationsBuilder.append(stationName);
+                                addedStations.add(stationName);
+                                
+                                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                                String arrivalTime = sch.getTimeArrival() != null ? 
+                                        timeFormat.format(sch.getTimeArrival()) : "?";
+                                timesBuilder.append(arrivalTime);
+                            }
                         }
                         
                         stationsStr = stationsBuilder.toString();
