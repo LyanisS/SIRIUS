@@ -22,17 +22,17 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.SpinnerDateModel;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerDateModel;
-import javax.swing.JCheckBox;
 
 import edu.ezip.ing1.pds.business.dto.Schedule;
 import edu.ezip.ing1.pds.business.dto.Schedules;
@@ -106,9 +106,6 @@ public class TrainTableView {
         });
         buttons.add(addTrainBtn);
         
-        JButton showRoutesBtn = MainInterfaceFrame.createButton("Afficher Trajets", MainInterfaceFrame.PRIMARY_COLOR);
-        buttons.add(showRoutesBtn);
-        
         JButton deleteTrainBtn = MainInterfaceFrame.createButton("Supprimer Train", MainInterfaceFrame.ACCENT_COLOR);
         deleteTrainBtn.addActionListener(e -> {
             TrainService service = new TrainService(this.frame.getNetworkConfig());
@@ -116,6 +113,13 @@ public class TrainTableView {
             int selectedRow = table.getSelectedRow();
             if (selectedRow != -1) {
                 int trainId = (int) table.getValueAt(selectedRow, 0);
+                
+                if (trainSchedules.containsKey(trainId) && !trainSchedules.get(trainId).isEmpty()) {
+                    frame.showWarningDialog("Suppression impossible", 
+                            "Impossible de supprimer le train " + trainId + " car il est associé à un trajet");
+                    return;
+                }
+                
                 if (frame.showConfirmDialog("Confirmer la suppression",
                         "Êtes-vous sûr de vouloir supprimer le train " + trainId + " ?")) {
                     try {
@@ -144,7 +148,7 @@ public class TrainTableView {
     }
 
     private void initializeTable() {
-        String[] columnNames = {"Numèro Train", "Position", "Heure d'arrivée"};
+        String[] columnNames = {"Numèro Train", "Position", "Heure d'arrivée", "Prochaine station"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -158,6 +162,7 @@ public class TrainTableView {
         table.getColumnModel().getColumn(0).setPreferredWidth(150);
         table.getColumnModel().getColumn(1).setPreferredWidth(150);
         table.getColumnModel().getColumn(2).setPreferredWidth(150);
+        table.getColumnModel().getColumn(3).setPreferredWidth(150);
       
         table.setFont(new Font("Arial", Font.PLAIN, 14));
         table.setRowHeight(30);
@@ -182,7 +187,8 @@ public class TrainTableView {
                     tableModel.addRow(new Object[]{
                         train.getId(), 
                         position.getStation(), 
-                        position.getArrivalTime()
+                        position.getArrivalTime(),
+                        position.getNextStation()
                     });
                 }
             }
@@ -435,10 +441,12 @@ public class TrainTableView {
     private class TrainPosition {
         private String station;
         private String arrivalTime;
+        private String nextStation;
         
-        public TrainPosition(String station, String arrivalTime) {
+        public TrainPosition(String station, String arrivalTime, String nextStation) {
             this.station = station;
             this.arrivalTime = arrivalTime;
+            this.nextStation = nextStation;
         }
         
         public String getStation() {
@@ -447,6 +455,10 @@ public class TrainTableView {
         
         public String getArrivalTime() {
             return arrivalTime;
+        }
+        
+        public String getNextStation() {
+            return nextStation;
         }
     }
     
@@ -536,9 +548,9 @@ public class TrainTableView {
     private TrainPosition calculateTrainPosition(int trainId) {
         String station = "Garage";
         String arrivalTime = "Non associé à un trajet";
+        String nextStation = "Non associé à un trajet";
         
         try {
-        
             if (trainSchedules.containsKey(trainId) && !trainSchedules.get(trainId).isEmpty()) {
                 List<Schedule> scheduleList = trainSchedules.get(trainId);
                 SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -548,17 +560,14 @@ public class TrainTableView {
                 System.out.println("Heure actuelle: " + timeFormat.format(currentTime));
                 System.out.println("Train #" + trainId + " - Horaires:");
                 
-        
                 for (Schedule s : scheduleList) {
                     System.out.println("  Station: " + s.getStation().getName() + 
                                     ", Arrivée: " + (s.getTimeArrival() != null ? timeFormat.format(s.getTimeArrival()) : "non associé à un trajet") + 
                                     ", Départ: " + (s.getTimeDeparture() != null ? timeFormat.format(s.getTimeDeparture()) : "Non associé à un trajet"));
                 }
                 
-        
                 scheduleList.sort((s1, s2) -> s1.getTimeArrival().compareTo(s2.getTimeArrival()));
                 
-            
                 Schedule lastVisitedSchedule = null;
                 Schedule nextSchedule = null;
                 
@@ -574,7 +583,6 @@ public class TrainTableView {
                         int scheduleHour = scheduleCal.get(Calendar.HOUR_OF_DAY);
                         int scheduleMinute = scheduleCal.get(Calendar.MINUTE);
                         
-                        
                         if (scheduleHour < currentHour || 
                             (scheduleHour == currentHour && scheduleMinute <= currentMinute)) {
                             lastVisitedSchedule = schedule;
@@ -589,12 +597,11 @@ public class TrainTableView {
                                 (lastVisitedSchedule != null ? lastVisitedSchedule.getStation().getName() : "aucune"));
                 System.out.println("Prochaine station: " + 
                                 (nextSchedule != null ? nextSchedule.getStation().getName() : "aucune"));
+
+                long currentTimeMillis = currentTime.getTime();
                 
-            
                 if (lastVisitedSchedule != null) {
-                    
                     if (nextSchedule != null) {
-                    
                         Calendar depCal = Calendar.getInstance();
                         depCal.setTime(lastVisitedSchedule.getTimeDeparture());
                         int depHour = depCal.get(Calendar.HOUR_OF_DAY);
@@ -602,23 +609,50 @@ public class TrainTableView {
                         
                         if (depHour > currentHour || 
                             (depHour == currentHour && depMinute > currentMinute)) {
+                            // Train is at a station, waiting for departure
                             station = lastVisitedSchedule.getStation().getName();
                             arrivalTime = "Départ à " + timeFormat.format(lastVisitedSchedule.getTimeDeparture());
+                            nextStation = nextSchedule.getStation().getName();
+                            
+                            // Debug information
+                            System.out.println("Train #" + trainId + " en gare à " + station);
+                            System.out.println("Prochaine station: " + nextStation);
+                            System.out.println("Heure actuelle: " + timeFormat.format(currentTime));
+                            System.out.println("Heure d'arrivée prochaine station: " + timeFormat.format(nextSchedule.getTimeArrival()));
                         } else {
                             // THE TRAIN IS BETWEEN 2 STATIONS
                             station = "En route: " + lastVisitedSchedule.getStation().getName() + 
                                     " → " + nextSchedule.getStation().getName();
                             arrivalTime = "Arrivée prévue à " + timeFormat.format(nextSchedule.getTimeArrival());
+                            nextStation = nextSchedule.getStation().getName();
+                            
+                            // Debug information
+                            System.out.println("Train #" + trainId + " en route vers " + nextStation);
+                            System.out.println("Heure actuelle: " + timeFormat.format(currentTime));
+                            System.out.println("Heure d'arrivée prochaine station: " + timeFormat.format(nextSchedule.getTimeArrival()));
                         }
                     } else {
                         // train is in the last station (TERMINUS)
                         station = lastVisitedSchedule.getStation().getName() + " (Terminus)";
                         arrivalTime = "Arrivé à " + timeFormat.format(lastVisitedSchedule.getTimeArrival());
+                        nextStation = "Terminus";
                     }
                 } else if (nextSchedule != null) {
-                    // the train is in his first station, waiting for the departure
+                    // the train is in Garage waiting for the departure
                     station = "En attente à " + scheduleList.get(0).getStation().getName();
                     arrivalTime = "Départ prévu à " + timeFormat.format(scheduleList.get(0).getTimeArrival());
+                    
+                    // Debug information
+                    System.out.println("Train #" + trainId + " en attente à " + scheduleList.get(0).getStation().getName());
+                    System.out.println("Heure actuelle: " + timeFormat.format(currentTime));
+                    System.out.println("Heure de départ: " + timeFormat.format(scheduleList.get(0).getTimeArrival()));
+                    
+                    // find the next station after the first one
+                    if (scheduleList.size() > 1) {
+                        nextStation = scheduleList.get(1).getStation().getName();
+                    } else {
+                        nextStation = "Terminus";
+                    }
                 }
             }
         } catch (Exception e) {
@@ -626,10 +660,9 @@ public class TrainTableView {
             System.out.println("Erreur lors du calcul de la position du train: " + e.getMessage());
         }
         
-        return new TrainPosition(station, arrivalTime);
+        return new TrainPosition(station, arrivalTime, nextStation);
     }
-
-
+    
     private Date getCurrentTime() {
         if (SIMULATION_ACTIVE && SIMULATION_TIME != null) {
             Calendar simCal = Calendar.getInstance();

@@ -9,8 +9,12 @@ import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.BasicStroke;
+import java.awt.geom.RoundRectangle2D;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -54,7 +58,8 @@ public class AddTrainStyle extends JDialog {
         mainPanel.setBorder(new EmptyBorder(30, 40, 30, 40));
 
     
-        JPanel messagePanel = new JPanel(new BorderLayout(0, 15));
+        JPanel messagePanel = new JPanel();
+        messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
         messagePanel.setOpaque(false);
 
     
@@ -62,9 +67,67 @@ public class AddTrainStyle extends JDialog {
         messageLabel.setFont(new Font("Arial", Font.BOLD, 16));
         messageLabel.setForeground(new Color(44, 62, 80));
         messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
+        messageLabel.setAlignmentX(CENTER_ALIGNMENT);
         
-
+        // Train icon
+        JPanel trainIconPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+            
+                g2d.setColor(new Color(52, 152, 219)); // Blue color
+                
+               //caracteristcis of train shipe
+                int width = 120;
+                int height = 40;
+                int x = (getWidth() - width) / 2;
+                int y = (getHeight() - height) / 2;
+                
+            
+                RoundRectangle2D body = new RoundRectangle2D.Double(x, y, width, height, 15, 15);
+                g2d.fill(body);
+                
+            
+                g2d.setColor(new Color(41, 128, 185)); // blue
+                RoundRectangle2D cabin = new RoundRectangle2D.Double(x + width - 30, y + 5, 25, 30, 10, 10);
+                g2d.fill(cabin);
+                
+                
+                g2d.setColor(new Color(214, 234, 248)); // Light blue
+                for (int i = 0; i < 3; i++) {
+                    g2d.fillRect(x + 10 + (i * 25), y + 10, 15, 15);
+                }
+                
+                
+                g2d.setColor(new Color(44, 62, 80)); // gray
+                g2d.fillOval(x + 20, y + height - 5, 15, 15);
+                g2d.fillOval(x + width - 35, y + height - 5, 15, 15);
+                
+                g2d.setColor(new Color(41, 128, 185));
+                g2d.fillRect(x + width - 15, y - 10, 8, 15);
+                
+                g2d.setColor(new Color(189, 195, 199, 150));
+                g2d.fillOval(x + width - 12, y - 20, 10, 10);
+                g2d.fillOval(x + width - 5, y - 25, 12, 12);
+                g2d.fillOval(x + width + 5, y - 30, 14, 14);
+            }
+            
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(200, 100);
+            }
+        };
+        
+        trainIconPanel.setOpaque(false);
+        trainIconPanel.setAlignmentX(CENTER_ALIGNMENT);
+        
+        messagePanel.add(trainIconPanel);
+        messagePanel.add(Box.createRigidArea(new Dimension(0, 15)));
+        messagePanel.add(messageLabel);
+        mainPanel.add(messagePanel, BorderLayout.CENTER);
 
     
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
