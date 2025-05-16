@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -33,7 +32,6 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
@@ -114,8 +112,6 @@ public class ScheduleTableView {
 
         this.frame.registerJButtons(buttons);
         
-        this.frame.registerJButtons(buttons);
-
         this.service = new ScheduleService(this.frame.getNetworkConfig());
         this.tripService = new TripService(this.frame.getNetworkConfig());
         this.refreshScheduleData();
@@ -127,7 +123,7 @@ public class ScheduleTableView {
             "Numéro Trajet",
             "Stations desservies",
             "Heures d'arrivée",
-            "Terminus"
+            "Dernière station"
         };
 
         tableModel = new DefaultTableModel(columnNames, 0) {
@@ -301,15 +297,8 @@ public class ScheduleTableView {
                         stationsStr = stationsBuilder.toString();
                         timesStr = timesBuilder.toString();
                         
-                        if (tripSchedules.size() >= 2) {
-                            Station firstStation = tripSchedules.get(0).getStation();
-                            Station lastStation = tripSchedules.get(tripSchedules.size() - 1).getStation();
-                            
-                            if (firstStation.getName().compareTo(lastStation.getName()) < 0) {
-                                direction = "POSE";
-                            } else {
-                                direction = "MAMO";
-                            }
+                        if (tripSchedules.size() >= 1) {
+                            direction = tripSchedules.get(tripSchedules.size() - 1).getStation().getName();
                         }
                     } else {
                         List<Station> stations = tripStations.get(tripId);
@@ -323,15 +312,8 @@ public class ScheduleTableView {
                             }
                             stationsStr = sb.toString();
                             
-                            if (stations.size() >= 2) {
-                                Station firstStation = stations.get(0);
-                                Station lastStation = stations.get(stations.size() - 1);
-                                
-                                if (firstStation.getName().compareTo(lastStation.getName()) < 0) {
-                                    direction = "POSE";
-                                } else {
-                                    direction = "MAMO";
-                                }
+                            if (stations.size() >= 1) {
+                                direction = stations.get(stations.size() - 1).getName();
                             }
                         }
                     }
@@ -417,34 +399,6 @@ public class ScheduleTableView {
         }
         
         panel.add(trainComboBox);
-        panel.add(Box.createRigidArea(new Dimension(0, 20)));
-        
-        JLabel directionLabel = createFormLabel("Terminus:");
-        panel.add(directionLabel);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-
-        JPanel directionPanel = new JPanel();
-        directionPanel.setLayout(new BoxLayout(directionPanel, BoxLayout.X_AXIS));
-        directionPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-        directionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        directionPanel.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
-        
-        ButtonGroup directionGroup = new ButtonGroup();
-        JRadioButton allerRadio = new JRadioButton("POSE");
-        JRadioButton retourRadio = new JRadioButton("MAMO");
-        allerRadio.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
-        retourRadio.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
-        allerRadio.setFont(new Font("Arial", Font.PLAIN, 14));
-        retourRadio.setFont(new Font("Arial", Font.PLAIN, 14));
-        allerRadio.setSelected(true);
-        
-        directionGroup.add(allerRadio);
-        directionGroup.add(retourRadio);
-        directionPanel.add(allerRadio);
-        directionPanel.add(Box.createRigidArea(new Dimension(50, 0)));
-        directionPanel.add(retourRadio);
-        
-        panel.add(directionPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
         
         JLabel stationsLabel = createFormLabel("Stations desservies:");
@@ -623,7 +577,9 @@ public class ScheduleTableView {
                     try {
                         Trip trip = new Trip();
                         trip.setTrain(trainList.get(selectedTrainIndex));
-                        String direction = allerRadio.isSelected() ? "POSE" : "MAMO";
+                        
+                       
+                        String direction = selectedStations.get(selectedStations.size() - 1).getName();
 
                         this.tripService.insertTrip(trip);
                         
@@ -1057,7 +1013,7 @@ public class ScheduleTableView {
                     
                     String stationsStr = "À définir";
                     String timesStr = "Non planifié";
-                    String terminus = "Non défini";
+                    String direction = "Non défini";
                     
                     if (tripSchedules != null && !tripSchedules.isEmpty()) {
                         tripSchedules.sort((s1, s2) -> s1.getTimeArrival().compareTo(s2.getTimeArrival()));
@@ -1089,7 +1045,7 @@ public class ScheduleTableView {
                         timesStr = timesBuilder.toString();
                         
                         if (tripSchedules.size() >= 1) {
-                            terminus = tripSchedules.get(tripSchedules.size() - 1).getStation().getName();
+                            direction = tripSchedules.get(tripSchedules.size() - 1).getStation().getName();
                         }
                     }
                     
@@ -1098,7 +1054,7 @@ public class ScheduleTableView {
                         tripId,
                         stationsStr,
                         timesStr,
-                        terminus
+                        direction
                     };
                     
                     tableModel.addRow(row);
