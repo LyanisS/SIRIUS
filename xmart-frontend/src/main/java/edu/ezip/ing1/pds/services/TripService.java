@@ -40,6 +40,8 @@ public class TripService {
     public void insertTrip(Trip trip) throws InterruptedException, IOException {
         final Deque<ClientRequest> clientRequests = new ArrayDeque<>();
         
+        final int trainId = trip.getTrain().getId();
+        
         final ObjectMapper objectMapper = new ObjectMapper();
         final String jsonifiedTrip = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(trip);
         logger.trace("Trip with its JSON face: {}", jsonifiedTrip);
@@ -65,7 +67,35 @@ public class TripService {
                 throw new IOException("Error inserting trip: " + exception.getMessage(), exception);
             }
             
-            logger.debug("Thread {} complete. Trip insertion successful.", joinedClientRequest.getThreadName());
+            Trip tripWithId = (Trip) joinedClientRequest.getResult();
+            if (tripWithId != null && tripWithId.getId() > 0) {
+                trip.setId(tripWithId.getId());
+                
+            } else {
+                logger.debug("Trip ID was not returned ");
+                Trips allTrips = this.selectTrips();
+                if (allTrips != null && allTrips.getTrips() != null) {
+                    int newestId = -1;
+                    Trip newestTrip = null;
+                    
+                    for (Trip t : allTrips.getTrips()) {
+                        if (t.getTrain() != null && t.getTrain().getId() == trainId && t.getId() > newestId) {
+                            newestId = t.getId();
+                            newestTrip = t;
+                        }
+                    }
+                    
+                    if (newestTrip != null) {
+                        trip.setId(newestTrip.getId());
+                        logger.debug("Trip ID found manually: {}", trip.getId());
+                    } else {
+                        logger.error("Could not find the newly inserted trip ID");
+                    }
+                }
+            }
+            
+            logger.debug("Thread {} complete. Trip insertion successful. Final ID: {}", 
+                    joinedClientRequest.getThreadName(), trip.getId());
         }
     }
 

@@ -114,6 +114,8 @@ public class ScheduleTableView {
 
         this.frame.registerJButtons(buttons);
         
+        this.frame.registerJButtons(buttons);
+
         this.service = new ScheduleService(this.frame.getNetworkConfig());
         this.tripService = new TripService(this.frame.getNetworkConfig());
         this.refreshScheduleData();
@@ -122,7 +124,7 @@ public class ScheduleTableView {
     private void createStyledTable() {
         String[] columnNames = {
             "Numéro Train",
-            "ID Trajet",
+            "Numéro Trajet",
             "Stations desservies",
             "Heures d'arrivée",
             "Terminus"
@@ -409,17 +411,6 @@ public class ScheduleTableView {
         panel.add(directionPanel);
         panel.add(Box.createRigidArea(new Dimension(0, 20)));
         
-        JLabel tripLabel = createFormLabel("ID Trajet:");
-        panel.add(tripLabel);
-        panel.add(Box.createRigidArea(new Dimension(0, 5)));
-
-        JTextField tripField = new JTextField();
-        tripField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-        tripField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        tripField.setFont(new Font("Arial", Font.PLAIN, 14));
-        panel.add(tripField);
-        panel.add(Box.createRigidArea(new Dimension(0, 20)));
-        
         JLabel stationsLabel = createFormLabel("Stations desservies:");
         panel.add(stationsLabel);
         panel.add(Box.createRigidArea(new Dimension(0, 5)));
@@ -581,7 +572,6 @@ public class ScheduleTableView {
             Integer result = (Integer) optionPane.getValue();
             if (result != null && result == JOptionPane.OK_OPTION) {
                 int selectedTrainIndex = trainComboBox.getSelectedIndex();
-                String tripId = tripField.getText();
                 List<Station> selectedStations = new ArrayList<>();
                 Map<Station, Date> stationArrivalTimes = new HashMap<>();
                 for (int i = 0; i < stationCheckboxes.size(); i++) {
@@ -593,44 +583,24 @@ public class ScheduleTableView {
                         stationArrivalTimes.put(station, arrivalTime);
                     }
                 }
-                if (selectedTrainIndex != -1 && !tripId.isEmpty() && !selectedStations.isEmpty()) {
+                if (selectedTrainIndex != -1 && !selectedStations.isEmpty()) {
                     try {
-                        int tripIdInt = Integer.parseInt(tripId);
-                        Trip trip = new Trip(tripIdInt, trainList.get(selectedTrainIndex));
+                        Trip trip = new Trip();
+                        trip.setTrain(trainList.get(selectedTrainIndex));
                         String direction = allerRadio.isSelected() ? "POSE" : "MAMO";
-                     
-                        Schedules allSchedules = this.service.selectSchedules();
-                        if (allSchedules != null && allSchedules.getSchedules() != null) {
-                            for (Schedule existing : allSchedules.getSchedules()) {
-                                if (existing.getTrip().getTrain().getId() == trainList.get(selectedTrainIndex).getId()) {
-                                    for (Station station : selectedStations) {
-                                        Date newArrival = stationArrivalTimes.get(station);
-                                        Time existingArrival = existing.getTimeArrival();
-                                        if (existingArrival != null && newArrival != null && isSameHourMinute(newArrival, existingArrival)) {
-                                            JOptionPane.showMessageDialog(panel, "Le train est déjà prévu à une autre station à " +
-                                                new java.text.SimpleDateFormat("HH:mm").format(newArrival) + ". Veuillez choisir un autre horaire.", "Conflit d'horaires", JOptionPane.WARNING_MESSAGE);
-                                            continue;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        Trips existingTrips = this.tripService.selectTrips();
-                        boolean tripExists = false;
-                        if (existingTrips != null && existingTrips.getTrips() != null) {
-                            for (Trip existingTrip : existingTrips.getTrips()) {
-                                if (existingTrip.getId() == trip.getId()) {
-                                    tripExists = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (tripExists) {
-                            JOptionPane.showMessageDialog(panel, "Un trajet avec cet ID existe déjà. Veuillez choisir un autre ID.", "Attention", JOptionPane.WARNING_MESSAGE);
+
+                        this.tripService.insertTrip(trip);
+                        
+                        System.out.println("ID du trajet généré: " + trip.getId());
+                        
+                        if (trip.getId() <= 0) {
+                            JOptionPane.showMessageDialog(panel, "Erreur: L'ID du trajet n'a pas été correctement généré", "Erreur!", JOptionPane.ERROR_MESSAGE);
                             continue;
                         }
-                        this.tripService.insertTrip(trip);
+
                         Schedules schedules = new Schedules();
+                        System.out.println("Nombre de stations à associer: " + selectedStations.size());
+                        
                         for (Station station : selectedStations) {
                             Schedule stationSchedule = new Schedule();
                             Calendar arrivalCal = Calendar.getInstance();
@@ -643,10 +613,14 @@ public class ScheduleTableView {
                             stationSchedule.setTimeDeparture(departureTime);
                             stationSchedule.setTrip(trip);
                             stationSchedule.setStation(station);
+                            
+                            System.out.println("Schedule pour station " + station.getName() + 
+                                " avec TripID=" + stationSchedule.getTrip().getId());
+                            
                             schedules.add(stationSchedule);
                         }
                         this.service.insertSchedules(schedules);
-                        tripStations.put(tripIdInt, selectedStations);
+                        tripStations.put(trip.getId(), selectedStations);
                         refreshScheduleData();
                         this.frame.showSuccessDialog("Bravo!", "Le trajet a été ajouté avec succès!");
                         done = true;
@@ -915,6 +889,10 @@ public class ScheduleTableView {
                             stationSchedule.setTimeDeparture(departureTime);
                             stationSchedule.setTrip(trip);
                             stationSchedule.setStation(station);
+                            
+                            System.out.println("Schedule pour station " + station.getName() + 
+                                " avec TripID=" + stationSchedule.getTrip().getId());
+                            
                             schedules.add(stationSchedule);
                         }
                         this.service.insertSchedules(schedules);
