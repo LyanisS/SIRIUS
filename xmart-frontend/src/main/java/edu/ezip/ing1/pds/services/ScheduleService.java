@@ -2,7 +2,9 @@ package edu.ezip.ing1.pds.services;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -134,6 +136,40 @@ public class ScheduleService {
 
         String result = (String) clientRequest.getResult();
         logger.debug("Delete schedule result: {}", result);
+    }
+
+    
+    public void deleteSchedulesByTripId(int tripId) throws InterruptedException, IOException {
+        logger.debug("Deleting all schedules for trip ID: {}", tripId);
+        
+        
+        Schedules allSchedules = this.selectSchedules();
+        if (allSchedules != null && allSchedules.getSchedules() != null) {
+            List<Integer> schedulesToDelete = new ArrayList<>();
+            
+            
+            for (Schedule schedule : allSchedules.getSchedules()) {
+                if (schedule.getTrip() != null && schedule.getTrip().getId() == tripId) {
+                    schedulesToDelete.add(schedule.getId());
+                }
+            }
+            
+            logger.debug("Found {} schedules to delete for trip ID {}", schedulesToDelete.size(), tripId);
+            
+           
+            for (Integer scheduleId : schedulesToDelete) {
+                try {
+                    deleteSchedule(scheduleId);
+                } catch (Exception e) {
+                    logger.error("Error deleting schedule ID {}: {}", scheduleId, e.getMessage());
+                    
+                }
+            }
+            
+            logger.debug("Completed deletion of schedules for trip ID {}", tripId);
+        } else {
+            logger.debug("No schedules found to delete for trip ID {}", tripId);
+        }
     }
 
     public void UpdateSchedule(int scheduleId, boolean stop) throws InterruptedException, IOException {
