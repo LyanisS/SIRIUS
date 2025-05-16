@@ -11,17 +11,13 @@ CREATE TABLE alert_gravity (
     alert_gravity_type VARCHAR(50) PRIMARY KEY
 );
 
-CREATE TABLE role (
-    role_name VARCHAR(50) PRIMARY KEY
-);
-
 CREATE TABLE trip (
-    trip_id INT PRIMARY KEY,
+    trip_id INT AUTO_INCREMENT PRIMARY KEY,
     train_id INT NOT NULL REFERENCES train(train_id)
 );
 
 CREATE TABLE schedule (
-    schedule_id INT PRIMARY KEY,
+    schedule_id INT AUTO_INCREMENT PRIMARY KEY,
     schedule_time_arrival TIME NOT NULL,
     schedule_time_departure TIME NOT NULL,
     station_name VARCHAR(50) NOT NULL REFERENCES station(station_name),
@@ -29,7 +25,7 @@ CREATE TABLE schedule (
 );
 
 CREATE TABLE alert (
-    alert_id INT PRIMARY KEY,
+    alert_id INT AUTO_INCREMENT PRIMARY KEY,
     alert_message VARCHAR(255) NOT NULL,
     alert_time TIME NOT NULL,
     alert_duration INT NOT NULL DEFAULT 0,
