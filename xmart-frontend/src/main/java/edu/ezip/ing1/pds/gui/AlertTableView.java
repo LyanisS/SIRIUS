@@ -12,6 +12,7 @@ import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -32,6 +33,7 @@ public class AlertTableView {
     private JTable table;
     private DefaultTableModel tableModel;
     private AlertService service;
+    private Integer filteredTrainId = null;
 
     public AlertTableView(MainInterfaceFrame frame) {
         this.frame = frame;
@@ -60,6 +62,20 @@ public class AlertTableView {
         JButton refreshButton = MainInterfaceFrame.createButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
         refreshButton.addActionListener(e -> frame.refreshAll());
         buttons.add(refreshButton);
+        
+        if (filteredTrainId != null) {
+            JButton clearFilterButton = MainInterfaceFrame.createButton("Effacer filtre", new Color(255, 165, 0));
+            clearFilterButton.addActionListener(e -> clearFilter());
+            buttons.add(clearFilterButton);
+            
+            JPanel filterIndicator = new JPanel(new BorderLayout());
+            filterIndicator.setBackground(Color.WHITE);
+            JLabel filterLabel = new JLabel("Affichage filtré pour le train " + filteredTrainId);
+            filterLabel.setFont(new Font("Arial", Font.BOLD, 14));
+            filterLabel.setForeground(new Color(255, 165, 0));
+            filterIndicator.add(filterLabel, BorderLayout.NORTH);
+            tablePanel.add(filterIndicator, BorderLayout.NORTH);
+        }
 
         this.frame.registerJButtons(buttons);
 
@@ -143,6 +159,11 @@ public class AlertTableView {
         try {
             tableModel.setRowCount(0);
 
+            if (filteredTrainId != null) {
+                applyTrainFilter(filteredTrainId);
+                return;
+            }
+
             Alerts alerts = this.service.selectAlerts();
 
             if (alerts != null && alerts.getAlerts() != null) {
@@ -207,28 +228,60 @@ public class AlertTableView {
     }
 
     private void handleDeleteError(Exception e, int alertId) {
-        String errorMessage = e.getMessage();
-        String userFriendlyMessage;
-
-        if (errorMessage != null && errorMessage.contains("Connection")) {
-            userFriendlyMessage = "Erreur de connexion au serveur.\n\n" +
-                    "Veuillez vérifier votre connexion réseau et réessayer.";
-        } else if (errorMessage != null && errorMessage.contains("Unrecognized token")) {
-
-            userFriendlyMessage = "L'alerte a probablement été supprimée, mais une erreur est survenue lors du traitement de la réponse.\n\n"
-                    +
-                    "Veuillez actualiser la liste pour vérifier.";
-
-            try {
-                refreshAlertData();
-            } catch (Exception refreshError) {
-
-            }
-        } else {
-            userFriendlyMessage = "Une erreur est survenue lors de la suppression de l'alerte" +
-                    (alertId > 0 ? " #" + alertId : "") + ":\n\n" + errorMessage;
+        this.frame.showErrorDialog(e, "Erreur de suppression",
+                "Erreur lors de la suppression de l'alerte " + alertId );
+    }
+    
+    public void filterByTrainId(int trainId) {
+        this.filteredTrainId = trainId;
+        applyTrainFilter(trainId);
+    }
+    
+    public void clearFilter() {
+        this.filteredTrainId = null;
+        if (frame instanceof MainInterfaceFrame) {
+            ((MainInterfaceFrame) frame).setAlarmsFilterTrainId(null);
         }
-
-        this.frame.showErrorDialog(e, "Erreur", userFriendlyMessage);
+        refreshAlertData();
+    }
+    
+    public Integer getFilteredTrainId() {
+        return filteredTrainId;
+    }
+    
+    private void applyTrainFilter(int trainId) {
+        try {
+            tableModel.setRowCount(0);
+            
+            Alerts alerts = this.service.selectAlerts();
+            
+            if (alerts != null && alerts.getAlerts() != null) {
+                for (Alert alert : alerts.getAlerts()) {
+                    if (alert.getTrain() != null && alert.getTrain().getId() == trainId) {
+                        Object[] row = {
+                                alert.getId(),
+                                alert.getMessage(),
+                                alert.getTime().toString(),
+                                alert.getGravity().getType(),
+                                alert.getTrain().getId()
+                        };
+                        tableModel.addRow(row);
+                    }
+                }
+            }
+            
+            if (tableModel.getRowCount() == 0) {
+                this.frame.showWarningDialog("Aucune alerte trouvée", 
+                        "Aucune alerte n'est associée au train " + trainId);
+            }
+            
+            this.frame.repaint();
+            this.frame.revalidate();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this.frame,
+                    "Erreur dans le filtrage des données: " + e.getMessage(),
+                    "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

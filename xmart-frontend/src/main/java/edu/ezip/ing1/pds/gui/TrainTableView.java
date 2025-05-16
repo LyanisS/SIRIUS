@@ -10,6 +10,8 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -24,8 +26,10 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
@@ -169,8 +173,69 @@ public class TrainTableView {
         table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
         table.getTableHeader().setBackground(new Color(52, 152, 219));
         table.getTableHeader().setForeground(Color.BLUE);
+        
+        addTableContextMenu();
     
         loadTrainData();
+    }
+
+    private void addTableContextMenu() {
+        JPopupMenu contextMenu = new JPopupMenu();
+        JMenuItem viewAlarmsItem = new JMenuItem("Consulter les alarmes associées");
+        JMenuItem viewRouteItem = new JMenuItem("Consulter le trajet associé");
+        
+        contextMenu.add(viewAlarmsItem);
+        contextMenu.add(viewRouteItem);
+        
+        viewAlarmsItem.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow != -1) {
+                int trainId = (int) table.getValueAt(selectedRow, 0);
+                showAlarmView(trainId);
+            }
+        });
+        
+        viewRouteItem.addActionListener(e -> {
+            int selectedRow = table.getSelectedRow();
+            if (selectedRow != -1) {
+                int trainId = (int) table.getValueAt(selectedRow, 0);
+                showPlanningView(trainId);
+            }
+        });
+        
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+            
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showContextMenu(e);
+                }
+            }
+            
+            private void showContextMenu(MouseEvent e) {
+                int row = table.rowAtPoint(e.getPoint());
+                if (row >= 0 && row < table.getRowCount()) {
+                    table.setRowSelectionInterval(row, row);
+                    contextMenu.show(e.getComponent(), e.getX(), e.getY());
+                }
+            }
+        });
+    }
+    
+    private void showAlarmView(int trainId) {
+        System.out.println("Showing alarms for train ID: " + trainId);
+        frame.showAlarmsView(trainId);
+    }
+    
+    private void showPlanningView(int trainId) {
+        System.out.println("Showing planning for train ID: " + trainId);
+        frame.showPlanningView(trainId);
     }
 
     private void loadTrainData() {

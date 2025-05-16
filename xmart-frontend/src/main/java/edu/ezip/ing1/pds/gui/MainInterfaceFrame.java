@@ -52,6 +52,12 @@ public class MainInterfaceFrame extends JFrame {
     private JLabel timeLabel;
     private String currentView = "trains"; // by deffault we have traffic view
     
+    private TrainTableView trainView;
+    private ScheduleTableView scheduleView;
+    private AlertTableView alertView;
+    private Integer alertsFilterTrainId = null;
+    private Integer planningFilterTrainId = null;
+    
     public MainInterfaceFrame() {
         super("Système de Contrôle Ferroviaire");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -107,7 +113,7 @@ public class MainInterfaceFrame extends JFrame {
     
         JButton refreshButton = createButton("Actualiser", BUTTON_COLOR);
         refreshButton.setToolTipText("Actualiser");
-        refreshButton.addActionListener(e -> refreshAll());
+        refreshButton.addActionListener(e -> refreshAllAndClearFilters());
         rightSection.add(refreshButton);
 
         topPanel.add(leftSection, BorderLayout.WEST);
@@ -117,11 +123,47 @@ public class MainInterfaceFrame extends JFrame {
     
     public void refreshAll() {
         if (currentView.equals("trains")) {
-            new TrainTableView(this);
+            trainView = new TrainTableView(this);
         } else if (currentView.equals("planning")) {
-            new ScheduleTableView(this);
+
+            Integer filteredTrainId = (scheduleView != null && scheduleView.getFilteredTrainId() != null) 
+                ? scheduleView.getFilteredTrainId() 
+                : planningFilterTrainId;
+                
+            scheduleView = new ScheduleTableView(this);
+            
+            
+            if (filteredTrainId != null) {
+                scheduleView.filterByTrainId(filteredTrainId);
+            }
         } else if (currentView.equals("alarmes")) {
-            new AlertTableView(this);
+            
+            Integer filteredTrainId = (alertView != null && alertView.getFilteredTrainId() != null) 
+                ? alertView.getFilteredTrainId() 
+                : alertsFilterTrainId;
+                
+            alertView = new AlertTableView(this);
+            
+            if (filteredTrainId != null) {
+                alertView.filterByTrainId(filteredTrainId);
+            }
+        }
+    }
+
+    public void refreshAllAndClearFilters() {
+        
+        if (currentView.equals("planning")) {
+            planningFilterTrainId = null;
+        } else if (currentView.equals("alarmes")) {
+            alertsFilterTrainId = null;
+        }
+        
+        if (currentView.equals("trains")) {
+            trainView = new TrainTableView(this);
+        } else if (currentView.equals("planning")) {
+            scheduleView = new ScheduleTableView(this);
+        } else if (currentView.equals("alarmes")) {
+            alertView = new AlertTableView(this);
         }
     }
 
@@ -212,21 +254,27 @@ public class MainInterfaceFrame extends JFrame {
         JButton btnTrain = MainInterfaceFrame.createButton("Trains");
         btnTrain.addActionListener(e -> {
             currentView = "trains";
-            new TrainTableView(this);
+            trainView = new TrainTableView(this);
         });
         bottomNavPanel.add(btnTrain);
 
         JButton btnSchedule = MainInterfaceFrame.createButton("Planning");
         btnSchedule.addActionListener(e -> {
             currentView = "planning";
-            new ScheduleTableView(this);
+            scheduleView = new ScheduleTableView(this);
+            if (planningFilterTrainId != null) {
+                scheduleView.filterByTrainId(planningFilterTrainId);
+            }
         });
         bottomNavPanel.add(btnSchedule);
 
         JButton btnAlerts = MainInterfaceFrame.createButton("Alarmes");
         btnAlerts.addActionListener(e -> {
             currentView = "alarmes";
-            new AlertTableView(this);
+            alertView = new AlertTableView(this);
+            if (alertsFilterTrainId != null) {
+                alertView.filterByTrainId(alertsFilterTrainId);
+            }
         });
         bottomNavPanel.add(btnAlerts);
 
@@ -269,5 +317,27 @@ public class MainInterfaceFrame extends JFrame {
             timeLabel.setText(currentTime.format(formatter));
         });
         timer.start();
+    }
+    
+    public void showAlarmsView(int trainId) {
+        currentView = "alarmes";
+        alertsFilterTrainId = trainId;
+        alertView = new AlertTableView(this);
+        alertView.filterByTrainId(trainId);
+    }
+    
+    public void showPlanningView(int trainId) {
+        currentView = "planning";
+        planningFilterTrainId = trainId;
+        scheduleView = new ScheduleTableView(this);
+        scheduleView.filterByTrainId(trainId);
+    }
+    
+    public void setPlanningFilterTrainId(Integer trainId) {
+        this.planningFilterTrainId = trainId;
+    }
+    
+    public void setAlarmsFilterTrainId(Integer trainId) {
+        this.alertsFilterTrainId = trainId;
     }
 }

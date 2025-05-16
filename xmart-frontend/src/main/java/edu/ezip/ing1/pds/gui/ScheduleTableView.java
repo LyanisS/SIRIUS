@@ -64,6 +64,7 @@ public class ScheduleTableView {
     private final ScheduleService service;
     private final TripService tripService;
     private Map<Integer, List<Station>> tripStations = new HashMap<>();
+    private Integer filteredTrainId = null;
 
     public ScheduleTableView(MainInterfaceFrame frame) {
         this.frame = frame;
@@ -93,6 +94,26 @@ public class ScheduleTableView {
         deleteButton.addActionListener(e -> deleteSchedule());
         buttons.add(deleteButton);
 
+        JButton refreshButton = MainInterfaceFrame.createButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
+        refreshButton.addActionListener(e -> refreshScheduleData());
+        buttons.add(refreshButton);
+        
+        if (filteredTrainId != null) {
+            JButton clearFilterButton = MainInterfaceFrame.createButton("Effacer filtre", new Color(255, 165, 0)); // Orange
+            clearFilterButton.addActionListener(e -> clearFilter());
+            buttons.add(clearFilterButton);
+            
+            JPanel filterIndicator = new JPanel(new BorderLayout());
+            filterIndicator.setBackground(Color.WHITE);
+            JLabel filterLabel = new JLabel("Affichage filtré pour le train " + filteredTrainId);
+            filterLabel.setFont(new Font("Arial", Font.BOLD, 14));
+            filterLabel.setForeground(new Color(255, 165, 0));
+            filterIndicator.add(filterLabel, BorderLayout.NORTH);
+            tablePanel.add(filterIndicator, BorderLayout.NORTH);
+        }
+
+        this.frame.registerJButtons(buttons);
+        
         this.service = new ScheduleService(this.frame.getNetworkConfig());
         this.tripService = new TripService(this.frame.getNetworkConfig());
         this.refreshScheduleData();
@@ -189,6 +210,12 @@ public class ScheduleTableView {
         try {
             tableModel.setRowCount(0);
 
+            if (filteredTrainId != null) {
+                // Si un filtre est actif, on applique le filtre
+                applyTrainFilter(filteredTrainId);
+                return;
+            }
+
             Schedules schedules = this.service.selectSchedules();
             Map<Integer, List<Schedule>> schedulesByTrip = new HashMap<>();
 
@@ -210,7 +237,6 @@ public class ScheduleTableView {
                     int tripId = trip.getId();
                     
                     String direction = "Non défini";
-                    
                     String stationsStr = "À définir";
                     String timesStr = "Non planifié";
                     
@@ -956,5 +982,108 @@ public class ScheduleTableView {
         c2.setTime(t2);
         return c1.get(Calendar.HOUR_OF_DAY) == c2.get(Calendar.HOUR_OF_DAY)
             && c1.get(Calendar.MINUTE) == c2.get(Calendar.MINUTE);
+    }
+    
+    public void filterByTrainId(int trainId) {
+        this.filteredTrainId = trainId;
+        applyTrainFilter(trainId);
+    }
+    
+    public void clearFilter() {
+        this.filteredTrainId = null;
+        if (frame instanceof MainInterfaceFrame) {
+            ((MainInterfaceFrame) frame).setPlanningFilterTrainId(null);
+        }
+        refreshScheduleData();
+    }
+    
+    public Integer getFilteredTrainId() {
+        return filteredTrainId;
+    }
+    
+    private void applyTrainFilter(int trainId) {
+        try {
+            tableModel.setRowCount(0);
+
+            Schedules schedules = this.service.selectSchedules();
+            Map<Integer, List<Schedule>> schedulesByTrip = new HashMap<>();
+
+        
+            if (schedules != null && schedules.getSchedules() != null) {
+                for (Schedule schedule : schedules.getSchedules()) {
+                    if (schedule.getTrip().getTrain() != null && 
+                        schedule.getTrip().getTrain().getId() == trainId) {
+                        int tripId = schedule.getTrip().getId();
+                        if (!schedulesByTrip.containsKey(tripId)) {
+                            schedulesByTrip.put(tripId, new ArrayList<>());
+                        }
+                        schedulesByTrip.get(tripId).add(schedule);
+                    }
+                }
+            }
+            
+        
+            if (!schedulesByTrip.isEmpty()) {
+                for (Map.Entry<Integer, List<Schedule>> entry : schedulesByTrip.entrySet()) {
+                    int tripId = entry.getKey();
+                    List<Schedule> tripSchedules = entry.getValue();
+                    
+                    String stationsStr = "À définir";
+                    String timesStr = "Non planifié";
+                    String terminus = "Non défini";
+                    
+                    if (tripSchedules != null && !tripSchedules.isEmpty()) {
+                        tripSchedules.sort((s1, s2) -> s1.getTimeArrival().compareTo(s2.getTimeArrival()));
+                        
+                        StringBuilder stationsBuilder = new StringBuilder();
+                        StringBuilder timesBuilder = new StringBuilder();
+                        
+                        for (Schedule sch : tripSchedules) {
+                            if (stationsBuilder.length() > 0) {
+                                stationsBuilder.append(" → ");
+                                timesBuilder.append(", ");
+                            }
+                            stationsBuilder.append(sch.getStation().getName());
+                            
+                            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                            String arrivalTime = sch.getTimeArrival() != null ? 
+                                    timeFormat.format(sch.getTimeArrival()) : "?";
+                            timesBuilder.append(arrivalTime);
+                        }
+                        
+                        stationsStr = stationsBuilder.toString();
+                        timesStr = timesBuilder.toString();
+                        
+                        if (tripSchedules.size() >= 1) {
+                            terminus = tripSchedules.get(tripSchedules.size() - 1).getStation().getName();
+                        }
+                    }
+                    
+                    Object[] row = {
+                        trainId,
+                        tripId,
+                        stationsStr,
+                        timesStr,
+                        terminus
+                    };
+                    
+                    tableModel.addRow(row);
+                }
+            }
+            
+            if (tableModel.getRowCount() == 0) {
+                this.frame.showWarningDialog("Aucun trajet trouvé", 
+                        "Aucun trajet n'est associé au train " + trainId);
+            }
+            
+            this.frame.repaint();
+            this.frame.revalidate();
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this.frame,
+                    "Erreur dans le filtrage des données: " + e.getMessage(),
+                    "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 }
