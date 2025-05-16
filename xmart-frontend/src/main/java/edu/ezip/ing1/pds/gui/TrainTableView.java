@@ -182,7 +182,7 @@ public class TrainTableView {
     private void addTableContextMenu() {
         JPopupMenu contextMenu = new JPopupMenu();
         JMenuItem viewAlarmsItem = new JMenuItem("Consulter les alarmes associées");
-        JMenuItem viewRouteItem = new JMenuItem("Consulter le trajet associé");
+        JMenuItem viewRouteItem = new JMenuItem("Consulter les trajets associés");
         
         contextMenu.add(viewAlarmsItem);
         contextMenu.add(viewRouteItem);
