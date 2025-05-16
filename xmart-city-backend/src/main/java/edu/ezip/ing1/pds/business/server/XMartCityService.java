@@ -2,11 +2,7 @@ package edu.ezip.ing1.pds.business.server;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -266,7 +262,7 @@ public class XMartCityService {
     private Response InsertAlert(final Request request, final Connection connection) throws SQLException, IOException {
         final ObjectMapper objectMapper = new ObjectMapper();
         final Alert alert = objectMapper.readValue(request.getRequestBody(), Alert.class);
-        final PreparedStatement stmt = connection.prepareStatement(Queries.INSERT_ALERT.query);
+        final PreparedStatement stmt = connection.prepareStatement(Queries.INSERT_ALERT.query, Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, alert.getMessage());
         stmt.setTime(2, alert.getTime());
         stmt.setInt(3, alert.getDuration());
@@ -276,15 +272,79 @@ public class XMartCityService {
         ResultSet res = stmt.getGeneratedKeys();
         if (res.next()) alert.setId(res.getInt(1));
 
+        int durationSeconds = alert.getDuration();
+        int durationMinutes = 0;
+        int durationHours = 0;
+        while (durationSeconds >= 60) {
+            durationSeconds -= 60;
+            durationMinutes++;
+        }
+        while (durationMinutes >= 60) {
+            durationMinutes -= 60;
+            durationHours++;
+        }
+
+        Time durationTime = new Time(durationHours, durationMinutes, durationSeconds);
+
+
+        if (alert.getDuration() > 0) {
+            final PreparedStatement updateScheduleStmt = connection.prepareStatement("UPDATE schedule SET schedule_time_arrival = ADDTIME(schedule_time_arrival, ?), schedule_time_departure = ADDTIME(schedule_time_departure, ?) WHERE trip_id IN (SELECT trip_id FROM trip WHERE train_id = ?) AND schedule_time_arrival > ? AND schedule_time_arrival < ADDTIME(?, ?);");
+            updateScheduleStmt.setTime(1, durationTime);
+            updateScheduleStmt.setTime(2, durationTime);
+            updateScheduleStmt.setInt(3, alert.getTrain().getId());
+            updateScheduleStmt.setTime(4, alert.getTime());
+            updateScheduleStmt.setTime(5, alert.getTime());
+            updateScheduleStmt.setTime(6, durationTime);
+            updateScheduleStmt.executeUpdate();
+
+        }
         return new Response(request.getRequestId(), objectMapper.writeValueAsString(alert));
     }
 
     private Response DeleteAlert(final Request request, final Connection connection) throws SQLException, IOException {
         final ObjectMapper objectMapper = new ObjectMapper();
         final Alert alert = objectMapper.readValue(request.getRequestBody(), Alert.class);
+
+        final PreparedStatement getAlertInfoStmt = connection.prepareStatement("SELECT alert_time, alert_duration, train_id FROM alert WHERE alert_id = ?;");
+        getAlertInfoStmt.setInt(1, alert.getId());
+        final ResultSet getAlertInfoRes = getAlertInfoStmt.executeQuery();
+        if (!getAlertInfoRes.next()) {
+            throw new SQLException("Aucune alerte n'a été trouvée. L'alerte " + alert.getId() + " n'existe pas.");
+        }
+        alert.setTime(getAlertInfoRes.getTime("alert_time"));
+        alert.setDuration(getAlertInfoRes.getInt("alert_duration"));
+        alert.setTrain(new Train(getAlertInfoRes.getInt("train_id")));
+
         final PreparedStatement stmt = connection.prepareStatement(Queries.DELETE_ALERT.query);
         stmt.setInt(1, alert.getId());
         stmt.executeUpdate();
+
+        int durationSeconds = alert.getDuration();
+        int durationMinutes = 0;
+        int durationHours = 0;
+        while (durationSeconds >= 60) {
+            durationSeconds -= 60;
+            durationMinutes++;
+        }
+        while (durationMinutes >= 60) {
+            durationMinutes -= 60;
+            durationHours++;
+        }
+
+        Time durationTime = new Time(durationHours, durationMinutes, durationSeconds);
+
+        if (alert.getDuration() > 0) {
+            final PreparedStatement updateScheduleStmt = connection.prepareStatement("UPDATE schedule SET schedule_time_arrival = SUBTIME(schedule_time_arrival, ?), schedule_time_departure = SUBTIME(schedule_time_departure, ?) WHERE trip_id IN (SELECT trip_id FROM trip WHERE train_id = ?) AND SUBTIME(schedule_time_arrival, ?) > ? AND SUBTIME(schedule_time_arrival, ?) < ADDTIME(?, ?);");
+            updateScheduleStmt.setTime(1, durationTime);
+            updateScheduleStmt.setTime(2, durationTime);
+            updateScheduleStmt.setInt(3, alert.getTrain().getId());
+            updateScheduleStmt.setTime(4, durationTime);
+            updateScheduleStmt.setTime(5, alert.getTime());
+            updateScheduleStmt.setTime(6, durationTime);
+            updateScheduleStmt.setTime(7, alert.getTime());
+            updateScheduleStmt.setTime(8, durationTime);
+            updateScheduleStmt.executeUpdate();
+        }
 
         return new Response(request.getRequestId(), objectMapper.writeValueAsString(alert));
     }

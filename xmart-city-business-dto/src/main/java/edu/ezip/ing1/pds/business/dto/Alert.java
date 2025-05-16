@@ -31,6 +31,14 @@ public class Alert {
         this.train = train;
     }
 
+    public Alert(String message, Time time, int duration, AlertGravity gravity, Train train) {
+        this.message = message;
+        this.time = time;
+        this.duration = duration;
+        this.gravity = gravity;
+        this.train = train;
+    }
+
     public int getId() {
         return id;
     }

@@ -10,15 +10,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -42,12 +34,19 @@ public class AlertTableView {
 
         createStyledTable();
 
-        JPanel tablePanel = this.frame.getMainContentPanel();
+        JPanel contentPanel = this.frame.getMainContentPanel();
+        contentPanel.removeAll();
+        contentPanel.setLayout(new BorderLayout());
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(MainInterfaceFrame.BACKGROUND_COLOR);
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        scrollPane.getViewport().setBackground(Color.WHITE);
-        tablePanel.add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setAlignmentX(JPanel.CENTER_ALIGNMENT);
+        mainPanel.add(scrollPane);
+
+        contentPanel.add(mainPanel, BorderLayout.CENTER);
 
         List<JButton> buttons = new ArrayList<>();
 
@@ -58,10 +57,6 @@ public class AlertTableView {
         JButton deleteButton = MainInterfaceFrame.createButton("Supprimer", MainInterfaceFrame.ACCENT_COLOR);
         deleteButton.addActionListener(e -> deleteSelectedAlert());
         buttons.add(deleteButton);
-
-        JButton refreshButton = MainInterfaceFrame.createButton("Actualiser", MainInterfaceFrame.REFRESH_BTN_COLOR);
-        refreshButton.addActionListener(e -> frame.refreshAll());
-        buttons.add(refreshButton);
         
         if (filteredTrainId != null) {
             JButton clearFilterButton = MainInterfaceFrame.createButton("Effacer filtre", new Color(255, 165, 0));
@@ -74,7 +69,7 @@ public class AlertTableView {
             filterLabel.setFont(new Font("Arial", Font.BOLD, 14));
             filterLabel.setForeground(new Color(255, 165, 0));
             filterIndicator.add(filterLabel, BorderLayout.NORTH);
-            tablePanel.add(filterIndicator, BorderLayout.NORTH);
+            mainPanel.add(filterIndicator, BorderLayout.NORTH);
         }
 
         this.frame.registerJButtons(buttons);
@@ -85,7 +80,7 @@ public class AlertTableView {
     }
 
     private void createStyledTable() {
-        String[] columnNames = { "ID Alarme", "Message", "Date/Heure", "Gravité", "Train" };
+        String[] columnNames = { "Numéro d'alarme", "Message", "Heure", "Gravité", "Numéro de train", "Impact sur le planning" };
 
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
@@ -94,64 +89,14 @@ public class AlertTableView {
             }
         };
 
-        table = new JTable(tableModel) {
-            @Override
-            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-                Component comp = super.prepareRenderer(renderer, row, column);
-
-                if (!isRowSelected(row)) {
-                    comp.setBackground(row % 2 == 0 ? Color.WHITE : MainInterfaceFrame.TABLE_ALTERNATE_ROW);
-                } else {
-
-                    comp.setBackground(
-                            new Color(MainInterfaceFrame.PRIMARY_COLOR.getRed(), MainInterfaceFrame.PRIMARY_COLOR.getGreen(), MainInterfaceFrame.PRIMARY_COLOR.getBlue(), 80));
-                    comp.setForeground(MainInterfaceFrame.TEXT_COLOR.darker());
-                }
-
-                return comp;
-            }
-        };
-
-        table.setRowHeight(30);
-        table.setIntercellSpacing(new Dimension(10, 5));
-        table.setGridColor(new Color(230, 230, 230));
-        table.setSelectionBackground(
-                new Color(MainInterfaceFrame.PRIMARY_COLOR.getRed(), MainInterfaceFrame.PRIMARY_COLOR.getGreen(), MainInterfaceFrame.PRIMARY_COLOR.getBlue(), 100));
-        table.setSelectionForeground(MainInterfaceFrame.TEXT_COLOR.darker());
-        table.setShowVerticalLines(false);
-        table.setFillsViewportHeight(true);
+        table = new JTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        table.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                int row = table.rowAtPoint(e.getPoint());
-                if (row >= 0) {
-                    table.setRowSelectionInterval(row, row);
-                }
-            }
-        });
-
-        JTableHeader header = table.getTableHeader();
-        header.setBackground(MainInterfaceFrame.TABLE_HEADER_COLOR);
-        header.setForeground(Color.WHITE);
-        header.setFont(new Font("Arial", Font.BOLD, 12));
-        header.setBorder(null);
-        header.setPreferredSize(new Dimension(0, 35));
-
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-
-        for (int i = 0; i < table.getColumnCount(); i++) {
-            table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
-        }
-
-        table.addMouseMotionListener(new MouseAdapter() {
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
+        table.setFont(new Font("Arial", Font.PLAIN, 14));
+        table.setRowHeight(30);
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        table.getTableHeader().setBackground(new Color(52, 152, 219));
+        table.getTableHeader().setForeground(Color.BLUE);
     }
 
 
@@ -173,19 +118,48 @@ public class AlertTableView {
                             alert.getMessage(),
                             alert.getTime().toString(),
                             alert.getGravity().getType(),
-                            alert.getTrain().getId()
+                            alert.getTrain().getId(),
+                            AlertTableView.getDurationString(alert.getDuration())
                     };
                     tableModel.addRow(row);
+                    System.out.println("Alert: " + alert.getId() + " " + alert.getMessage() + " " + alert.getTime() + " " + alert.getGravity().getType() + " " + alert.getTrain().getId() + " " + alert.getDuration());
                 }
             }
-            this.frame.repaint();
-            this.frame.revalidate();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this.frame,
                     "Erreur dans le chargement des donnèes: " + e.getMessage(),
                     "Erreur",
                     JOptionPane.ERROR_MESSAGE);
         }
+
+        if (tableModel.getRowCount() == 0) {
+            String message = filteredTrainId != null ? "Aucune alerte trouvée pour le train n°" + filteredTrainId : "Aucune alerte disponible";
+            JLabel emptyLabel = new JLabel(message, SwingConstants.CENTER);
+            emptyLabel.setFont(new Font("Arial", Font.BOLD, 16));
+            emptyLabel.setForeground(new Color(128, 128, 128));
+            this.frame.getMainContentPanel().add(emptyLabel, BorderLayout.NORTH);
+        }
+
+        this.frame.revalidate();
+        this.frame.repaint();
+        System.out.println("revalidate/repaint");
+    }
+
+    private static String getDurationString(int duration_seconds) {
+        int duration_minutes = 0;
+        while (duration_seconds >= 60) {
+            duration_minutes++;
+            duration_seconds -= 60;
+        }
+        String duration = "Aucun";
+        if (duration_seconds > 0 && duration_minutes > 0) {
+            duration = duration_minutes + " min " + duration_seconds;
+        } else if (duration_minutes > 0 && duration_seconds == 0) {
+            duration = duration_minutes + " min";
+        } else if (duration_minutes == 0 && duration_seconds > 0) {
+            duration = duration_seconds + " sec";
+        }
+        return duration;
     }
 
     private void showAddAlertDialog() {
@@ -239,8 +213,8 @@ public class AlertTableView {
     
     public void clearFilter() {
         this.filteredTrainId = null;
-        if (frame instanceof MainInterfaceFrame) {
-            ((MainInterfaceFrame) frame).setAlarmsFilterTrainId(null);
+        if (frame != null) {
+            frame.setAlarmsFilterTrainId(null);
         }
         refreshAlertData();
     }
@@ -263,7 +237,8 @@ public class AlertTableView {
                                 alert.getMessage(),
                                 alert.getTime().toString(),
                                 alert.getGravity().getType(),
-                                alert.getTrain().getId()
+                                alert.getTrain().getId(),
+                                AlertTableView.getDurationString(alert.getDuration())
                         };
                         tableModel.addRow(row);
                     }
