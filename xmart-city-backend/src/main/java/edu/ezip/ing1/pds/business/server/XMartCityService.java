@@ -402,6 +402,11 @@ public class XMartCityService {
             if (rowsAffected == 0) {
                 throw new SQLException("Aucun trajet n'a été supprimé. Le trajet " + trip.getId() + " n'existe pas.");
             }
+
+            PreparedStatement deleteScheduleStmt = connection.prepareStatement("DELETE FROM schedule WHERE trip_id = ?");
+            deleteScheduleStmt.setInt(1, trip.getId());
+            deleteScheduleStmt.executeUpdate();
+
         } catch (SQLException e) {
             logger.error("SQL error deleting trip: {}", e.getMessage());
             throw new SQLException("Erreur lors de la suppression du trajet: " + e.getMessage(), e);
