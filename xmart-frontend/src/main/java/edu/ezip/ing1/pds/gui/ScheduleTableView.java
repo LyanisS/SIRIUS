@@ -575,6 +575,37 @@ public class ScheduleTableView {
                 }
                 if (selectedTrainIndex != -1 && !selectedStations.isEmpty()) {
                     try {
+                    
+                        int trainId = trainList.get(selectedTrainIndex).getId();
+                        
+                       
+                        Date firstStationTime = null;
+                        Date lastStationTime = null;
+                        
+                        for (int i = 0; i < stationCheckboxes.size(); i++) {
+                            JCheckBox checkbox = stationCheckboxes.get(i);
+                            if (checkbox.isSelected()) {
+                                Date arrivalTime = (Date) arrivalTimeSpinners.get(checkbox).getValue();
+                                if (firstStationTime == null || arrivalTime.before(firstStationTime)) {
+                                    firstStationTime = arrivalTime;
+                                }
+                                if (lastStationTime == null || arrivalTime.after(lastStationTime)) {
+                                    lastStationTime = arrivalTime;
+                                }
+                            }
+                        }
+                        
+                        Time startTime = new Time(firstStationTime.getTime());
+                        Time endTime = new Time(lastStationTime.getTime());
+                        
+                        if (checkTrainTimeConflict(trainId, null, startTime, endTime)) {
+                            JOptionPane.showMessageDialog(panel, 
+                                "Ce train est déjà associé à un autre trajet à cette horaire. Veuillez choisir un autre train! ou modifier les horaires!", 
+                                "Conflit !!", 
+                                JOptionPane.WARNING_MESSAGE);
+                            continue;
+                        }
+                        
                         Trip trip = new Trip();
                         trip.setTrain(trainList.get(selectedTrainIndex));
                         
@@ -858,6 +889,34 @@ public class ScheduleTableView {
                 }
                 if (selectedTrainIdxNew != -1 && !selectedStations.isEmpty()) {
                     try {
+                        
+                        Date firstStationTime = null;
+                        Date lastStationTime = null;
+                        
+                        for (int i = 0; i < stationCheckboxes.size(); i++) {
+                            JCheckBox checkbox = stationCheckboxes.get(i);
+                            if (checkbox.isSelected()) {
+                                Date arrivalTime = (Date) arrivalTimeSpinners.get(checkbox).getValue();
+                                if (firstStationTime == null || arrivalTime.before(firstStationTime)) {
+                                    firstStationTime = arrivalTime;
+                                }
+                                if (lastStationTime == null || arrivalTime.after(lastStationTime)) {
+                                    lastStationTime = arrivalTime;
+                                }
+                            }
+                        }
+                        
+                        Time startTime = new Time(firstStationTime.getTime());
+                        Time endTime = new Time(lastStationTime.getTime());
+                        
+                        if (checkTrainTimeConflict(trainId, tripId, startTime, endTime)) {
+                            JOptionPane.showMessageDialog(panel, 
+                                "Ce train est déjà programmé pour un autre trajet à cette horaire!! Veuillez modifier les horaires.", 
+                                "Conflit d'horaires!!", 
+                                JOptionPane.WARNING_MESSAGE);
+                            continue;
+                        }
+                        
                         Trip trip = new Trip(tripId, trainList.get(selectedTrainIdxNew));
                         
                        
@@ -1075,5 +1134,51 @@ public class ScheduleTableView {
                     "Erreur",
                     JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+   
+    private boolean checkTrainTimeConflict(int trainId, Integer tripIdToIgnore, Time startTime, Time endTime) {
+        try {
+            Schedules schedules = this.service.selectSchedules();
+            if (schedules != null && schedules.getSchedules() != null) {
+                
+                Map<Integer, List<Schedule>> schedulesByTrip = new HashMap<>();
+                
+                for (Schedule schedule : schedules.getSchedules()) {
+                    if (schedule.getTrip().getTrain() != null && 
+                        schedule.getTrip().getTrain().getId() == trainId &&
+                        (tripIdToIgnore == null || schedule.getTrip().getId() != tripIdToIgnore)) {
+                        
+                        int tripId = schedule.getTrip().getId();
+                        if (!schedulesByTrip.containsKey(tripId)) {
+                            schedulesByTrip.put(tripId, new ArrayList<>());
+                        }
+                        schedulesByTrip.get(tripId).add(schedule);
+                    }
+                }
+                
+                for (Map.Entry<Integer, List<Schedule>> entry : schedulesByTrip.entrySet()) {
+                    List<Schedule> tripSchedules = entry.getValue();
+                    
+                    if (tripSchedules != null && !tripSchedules.isEmpty()) {
+                        
+                        tripSchedules.sort((s1, s2) -> s1.getTimeArrival().compareTo(s2.getTimeArrival()));
+                        
+                       
+                        Time existingStartTime = tripSchedules.get(0).getTimeArrival();
+                        Time existingEndTime = tripSchedules.get(tripSchedules.size() - 1).getTimeArrival();
+                        
+                        
+                        if ((startTime.before(existingEndTime) && endTime.after(existingStartTime)) ||
+                            startTime.equals(existingStartTime) || endTime.equals(existingEndTime)) {
+                            return true; 
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return false; 
     }
 }
