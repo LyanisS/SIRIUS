@@ -59,7 +59,7 @@ jobs:
       - name: Build front with npm
         run: |
           cd  $GITHUB_WORKSPACE/webapp
-          npm start build
+          npm run build
       - uses: actions/upload-artifact@v4
         with:
           name: front-build
