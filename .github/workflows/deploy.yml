@@ -1,0 +1,122 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  BACKEND_CONFIG_FILE: webapp/src/constants/back.js
+  API_CONFIG_FILE: api/src/main/resources/application.properties
+
+jobs:
+  build-api:
+    runs-on: episen-pcc
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set env variables and secrets based on branch
+        run: |
+          set_prop() {
+            file="$1"
+            key="$2"
+            value="$3"
+          
+            if grep -q "^$key=" "$file"; then
+            sed -i "s|^$key=.*|$key=$value|" "$file"
+            else
+            echo "$key=$value" >> "$file"
+            fi
+          }
+  
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            set_prop $API_CONFIG_FILE spring.datasource.url "${{ vars.INTEG_DATASOURCE_URL }}"
+            set_prop $API_CONFIG_FILE spring.datasource.username "${{ vars.INTEG_DATASOURCE_USERNAME }}"
+            set_prop $API_CONFIG_FILE spring.datasource.password "${{ secrets.INTEG_DATASOURCE_PASSWORD }}"
+          else
+            echo "Workflow is running on wrong branch. Exiting..."
+            exit 1
+          fi
+      - name: Build api with Maven
+        run: |
+          cd $GITHUB_WORKSPACE/api
+          mvn package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api-jar
+          path: "${{ github.workspace }}/api/target/*.jar"
+          if-no-files-found: 'error'
+
+  build-front:
+    runs-on: episen-pcc
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          cd $GITHUB_WORKSPACE/webapp
+          npm install
+      - name: Build front with npm
+        run: |
+          cd  $GITHUB_WORKSPACE/webapp
+          npm start build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: front-build
+          path: "${{ github.workspace }}/webapp/build/"
+          if-no-files-found: 'error'
+
+  deploy:
+    runs-on: episen-pcc
+    needs: [build-api, build-front]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: api-jar
+          path: "${{ github.workspace }}/api"
+      - uses: actions/download-artifact@v4
+        with:
+          name: front-build
+          path: "${{ github.workspace }}/webapp"
+      - name: Set env variables and secrets based on branch
+        run: |
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            echo "FRONT_SSH_HOST=${{ vars.INTEG_FRONT_SSH_HOST }}" >> $GITHUB_ENV
+            echo "FRONT_SSH_PORT=${{ vars.INTEG_FRONT_SSH_PORT }}" >> $GITHUB_ENV
+            echo "FRONT_SSH_USER=${{ vars.INTEG_FRONT_SSH_USER }}" >> $GITHUB_ENV
+
+            echo "API_SSH_HOST=${{ vars.INTEG_API_SSH_HOST }}" >> $GITHUB_ENV
+            echo "API_SSH_PORT=${{ vars.INTEG_API_SSH_PORT }}" >> $GITHUB_ENV
+            echo "API_SSH_USER=${{ vars.INTEG_API_SSH_USER }}" >> $GITHUB_ENV
+          else
+            echo "Workflow is running on wrong branch. Exiting..."
+            exit 1
+          fi
+      - name: Deploy to frontend server
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ARGS: '-zvci'
+          SOURCE: 'webapp/'
+          REMOTE_HOST: ${{ env.FRONT_SSH_HOST }}
+          REMOTE_PORT: ${{ env.FRONT_SSH_PORT }}
+          REMOTE_USER: ${{ env.FRONT_SSH_USER }}
+          TARGET: '/var/www/html/'
+      - name: Deploy to api server
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ARGS: '-zvci'
+          SOURCE: 'api/*.jar'
+          REMOTE_HOST: ${{ env.API_SSH_HOST }}
+          REMOTE_PORT: ${{ env.API_SSH_PORT }}
+          REMOTE_USER: ${{ env.API_SSH_USER }}
+          TARGET: '/opt/pcc/api.jar'
+      - name: Restarting api server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.API_SSH_HOST }}
+          port: ${{ env.API_SSH_PORT }}
+          username: ${{ env.API_SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: sudo systemctl restart pcc.service
