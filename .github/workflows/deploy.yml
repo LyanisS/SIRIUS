@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - prod
 
 env:
   API_CONFIG_FILE: api/src/main/resources/application.properties
@@ -32,6 +33,10 @@ jobs:
             set_prop $API_CONFIG_FILE spring.datasource.url "${{ vars.INTEG_DATASOURCE_URL }}"
             set_prop $API_CONFIG_FILE spring.datasource.username "${{ vars.INTEG_DATASOURCE_USERNAME }}"
             set_prop $API_CONFIG_FILE spring.datasource.password "${{ secrets.INTEG_DATASOURCE_PASSWORD }}"
+          elif [[ "${GITHUB_REF}" == "refs/heads/prod" ]]; then
+            set_prop $API_CONFIG_FILE spring.datasource.url "${{ vars.PROD_DATASOURCE_URL }}"
+            set_prop $API_CONFIG_FILE spring.datasource.username "${{ vars.PROD_DATASOURCE_USERNAME }}"
+            set_prop $API_CONFIG_FILE spring.datasource.password "${{ secrets.PROD_DATASOURCE_PASSWORD }}"
           else
             echo "Workflow is running on wrong branch. Exiting..."
             exit 1
@@ -91,6 +96,14 @@ jobs:
             echo "API_SSH_HOST=${{ vars.INTEG_API_SSH_HOST }}" >> $GITHUB_ENV
             echo "API_SSH_PORT=${{ vars.INTEG_API_SSH_PORT }}" >> $GITHUB_ENV
             echo "API_SSH_USER=${{ vars.INTEG_API_SSH_USER }}" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF}" == "refs/heads/prod" ]]; then
+            echo "FRONT_SSH_HOST=${{ vars.PROD_FRONT_SSH_HOST }}" >> $GITHUB_ENV
+            echo "FRONT_SSH_PORT=${{ vars.PROD_FRONT_SSH_PORT }}" >> $GITHUB_ENV
+            echo "FRONT_SSH_USER=${{ vars.PROD_FRONT_SSH_USER }}" >> $GITHUB_ENV
+
+            echo "API_SSH_HOST=${{ vars.PROD_API_SSH_HOST }}" >> $GITHUB_ENV
+            echo "API_SSH_PORT=${{ vars.PROD_API_SSH_PORT }}" >> $GITHUB_ENV
+            echo "API_SSH_USER=${{ vars.PROD_API_SSH_USER }}" >> $GITHUB_ENV
           else
             echo "Workflow is running on wrong branch. Exiting..."
             exit 1
