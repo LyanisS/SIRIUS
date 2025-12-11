@@ -56,7 +56,6 @@ export default function Sample() {
             <th scope="col">Date</th>
             <th scope="col">String</th>
             <th scope="col">Float</th>
-            <th scope="col">Type</th>
             <th scope="col">Actions</th>
           </tr>
           </thead>
@@ -82,7 +81,6 @@ export default function Sample() {
                     </td>
                     <td>{sample.stringSample}</td>
                     <td>{sample.floatSample}</td>
-                    <td>{sample.sampleType}</td>
                     <td>
                       <button type="button"
                               className="btn btn-outline-danger"
