@@ -1,0 +1,10 @@
+[Unit]
+Description=PCC API Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/java -jar /opt/pcc/api.jar
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -41,7 +41,8 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/api
           mvn package
-      - uses: actions/upload-artifact@v4
+      - name: Upload API artifact
+        uses: actions/upload-artifact@v4
         with:
           name: api-jar
           path: "${{ github.workspace }}/api/target/*.jar"
@@ -60,7 +61,8 @@ jobs:
         run: |
           cd  $GITHUB_WORKSPACE/webapp
           npm run build
-      - uses: actions/upload-artifact@v4
+      - name: Upload front artifact
+        uses: actions/upload-artifact@v4
         with:
           name: front-build
           path: "${{ github.workspace }}/webapp/build/"
@@ -70,14 +72,16 @@ jobs:
     runs-on: episen-pcc
     needs: [build-api, build-front]
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download API artifact
+        uses: actions/download-artifact@v4
         with:
           name: api-jar
-          path: "${{ github.workspace }}/api"
-      - uses: actions/download-artifact@v4
+          path: "${{ github.workspace }}/artifact-api"
+      - name: Download front artifact
+        uses: actions/download-artifact@v4
         with:
           name: front-build
-          path: "${{ github.workspace }}/webapp"
+          path: "${{ github.workspace }}/artifact-front"
       - name: Set env variables and secrets based on branch
         run: |
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
@@ -96,8 +100,8 @@ jobs:
         uses: easingthemes/ssh-deploy@main
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          ARGS: '-zvci'
-          SOURCE: 'webapp/'
+          ARGS: '-zvci --delete'
+          SOURCE: 'artifact-front/'
           REMOTE_HOST: ${{ env.FRONT_SSH_HOST }}
           REMOTE_PORT: ${{ env.FRONT_SSH_PORT }}
           REMOTE_USER: ${{ env.FRONT_SSH_USER }}
@@ -107,7 +111,7 @@ jobs:
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           ARGS: '-zvci'
-          SOURCE: 'api/*.jar'
+          SOURCE: 'artifact-api/*.jar'
           REMOTE_HOST: ${{ env.API_SSH_HOST }}
           REMOTE_PORT: ${{ env.API_SSH_PORT }}
           REMOTE_USER: ${{ env.API_SSH_USER }}
