@@ -6,7 +6,6 @@ on:
       - main
 
 env:
-  BACKEND_CONFIG_FILE: webapp/src/constants/back.js
   API_CONFIG_FILE: api/src/main/resources/application.properties
 
 jobs:
