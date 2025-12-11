@@ -5,6 +5,12 @@ on:
     branches:
       - main
       - prod
+    paths:
+      - 'api/**'
+      - 'webapp/**'
+      - '!*.md'
+      - '!*.sql'
+      - '!.gitignore'
 
 env:
   API_CONFIG_FILE: api/src/main/resources/application.properties
