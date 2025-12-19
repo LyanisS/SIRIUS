@@ -1,9 +1,9 @@
 package fr.episen.sirius.pcc.back.services.regulation;
 
+import fr.episen.sirius.pcc.back.models.regulation.ElementVoie;
 import fr.episen.sirius.pcc.back.models.regulation.Train;
-import fr.episen.sirius.pcc.back.models.regulation.Station;
+import fr.episen.sirius.pcc.back.repositories.regulation.ElementVoieRepository;
 import fr.episen.sirius.pcc.back.repositories.regulation.TrainRepository;
-import fr.episen.sirius.pcc.back.repositories.regulation.StationRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,7 +23,7 @@ public class TrainService {
     private TrainRepository trainRepository;
 
     @Autowired
-    private StationService stationService;
+    private ElementVoieRepository elementVoieRepository;
 
     private Random random = new Random();
 
@@ -63,16 +63,16 @@ public class TrainService {
     @Scheduled(fixedRate = 10000) // 10000 ms = 10 secondes
     public void simulateTrainMovement() {
         List<Train> trains = this.getAllTrains();
-        List<Station> stations = stationService.getAllStations();
+        List<ElementVoie> elementVoies = elementVoieRepository.findAllElementVoie();
 
-        // Vérification qu'il y a des trains et des stations
+        // Vérification qu'il y a des trains et des éléments de voie
         if (trains.isEmpty()) {
             log.warn("Aucun train trouvé pour la simulation");
             return;
         }
 
-        if (stations.isEmpty()) {
-            log.warn("Aucune station trouvée pour la simulation");
+        if (elementVoies.isEmpty()) {
+            log.warn("Aucun élément de voie trouvé pour la simulation");
             return;
         }
 
@@ -81,7 +81,7 @@ public class TrainService {
         // Boucle sur chaque train
         for (Train train : trains) {
             // Sélection aléatoire d'une station
-            Station randomStation = stations.get(random.nextInt(stations.size()));
+            ElementVoie randomElementVoie = elementVoies.get(random.nextInt(elementVoies.size()));
 
             // Génération d'une vitesse aléatoire entre 60 et 100 km/h
             float newVitesse = 60 + random.nextFloat() * 40;
@@ -93,9 +93,9 @@ public class TrainService {
             // Sauvegarde en base
             trainRepository.save(train);
 
-            log.info("Train ID {} | Station: '{}' | Vitesse: {:.2f} km/h | Date: {}",
+            log.info("Train ID {} | ElementVoie ID: '{}' | Vitesse: {:.2f} km/h | Date: {}",
                     train.getId(),
-                    randomStation.getNom(),
+                    randomElementVoie.getId(),
                     newVitesse,
                     train.getDateArriveePosition());
         }
