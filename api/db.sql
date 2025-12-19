@@ -151,6 +151,8 @@ INSERT INTO Jour (id, nom) VALUES
     (6, 'Samedi'),
     (7, 'Dimanche');
 
+INSERT INTO Ligne (id, nom) VALUES (1, 'Ligne 8');
+
 -- Insertion fréquences
 INSERT INTO Frequence (id, recurrence, dateDebut, dateFin, heureDebut, heureFin, sens, ligne) VALUES
     (1, 10, '2025-12-15', '2026-12-10', '08:00:00', '22:00:00', true, 1),
@@ -159,3 +161,4 @@ INSERT INTO Frequence (id, recurrence, dateDebut, dateFin, heureDebut, heureFin,
 INSERT INTO Frequence_Jour (frequence, jour) VALUES
     (1, 5),
     (2, 5);
+
