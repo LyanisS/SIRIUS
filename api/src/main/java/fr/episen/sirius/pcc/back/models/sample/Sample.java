@@ -24,3 +24,4 @@ public class Sample {
     @Column(name = "float_sample")
     private Float floatSample;
 }
+ 
