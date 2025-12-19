@@ -140,28 +140,16 @@ CREATE TABLE IF NOT EXISTS Itineraire (
     depart BOOLEAN NOT NULL
 );
 
--- Table Voyageur (hérite d'Utilisateur)
-CREATE TABLE IF NOT EXISTS Voyageur (
-    utilisateurID INT PRIMARY KEY,
-    itineraireID INT,
-    FOREIGN KEY (utilisateurID) REFERENCES Utilisateur(ID) ON DELETE CASCADE,
-    FOREIGN KEY (itineraireID) REFERENCES Itineraire(ID) ON DELETE SET NULL
-);
+-- Insertion stations
+INSERT INTO Station (nom) VALUES
+    ('Pointe du Lac'),
+    ('Créteil'),
+    ('Université'),
+    ('L''Échat');
 
--- Table association Itineraire - Station (arrivée)
-CREATE TABLE IF NOT EXISTS Itineraire_Station_Arrivee (
-    itineraireID INT NOT NULL,
-    stationID INT NOT NULL,
-    PRIMARY KEY (itineraireID, stationID),
-    FOREIGN KEY (itineraireID) REFERENCES Itineraire(ID) ON DELETE CASCADE,
-    FOREIGN KEY (stationID) REFERENCES Station(ID) ON DELETE CASCADE
-);
-
--- Table association Itineraire - Station (départ)
-CREATE TABLE IF NOT EXISTS Itineraire_Station_Depart (
-    itineraireID INT NOT NULL,
-    stationID INT NOT NULL,
-    PRIMARY KEY (itineraireID, stationID),
-    FOREIGN KEY (itineraireID) REFERENCES Itineraire(ID) ON DELETE CASCADE,
-    FOREIGN KEY (stationID) REFERENCES Station(ID) ON DELETE CASCADE
-);
+-- Insertion trains
+INSERT INTO Train (vitesse, dateArriveePosition) VALUES
+    (80.5, '2025-12-19 08:00:00'),
+    (75.0, '2025-12-19 08:05:00'),
+    (85.3, '2025-12-19 08:05:00'),
+    (78.2, '2025-12-19 08:05:00')
