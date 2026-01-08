@@ -9,6 +9,5 @@ import java.util.List;
 
 @Repository
 public interface ElementVoieRepository extends JpaRepository<ElementVoie, Long> {
-    @Query(value="SELECT * FROM Station ", nativeQuery = true)
-    List<ElementVoie> findAllElementVoie();
+
 }

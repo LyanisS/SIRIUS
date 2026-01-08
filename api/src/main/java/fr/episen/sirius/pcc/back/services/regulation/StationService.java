@@ -26,11 +26,6 @@ public class StationService {
         return stations;
     }
 
-    /**
-     * Récupère une station par son ID
-     * @param id L'ID de la station
-     * @return Optional contenant la station si elle existe
-     */
     public Optional<Station> getStationById(Long id) {
         log.info("Récupération de la station avec l'ID: {}", id);
         return stationRepository.findById(id);

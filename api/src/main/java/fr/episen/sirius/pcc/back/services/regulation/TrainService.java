@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import java.util.Date;
@@ -38,34 +39,22 @@ public class TrainService {
         return trains;
     }
 
-    /**
-     * Récupère un train par son ID
-     * @param id L'ID du train
-     * @return Optional contenant le train s'il existe
-     */
     public Optional<Train> getTrainById(Long id) {
         log.info("Récupération du train avec l'ID: {}", id);
         return trainRepository.findById(id);
     }
 
-    /**
-     * Initialisation au démarrage
-     */
     @PostConstruct
     public void init() {
-        log.info("=== TrainService initialisé ===");
         log.info("Simulation de mouvement des trains démarrée - Mise à jour toutes les 10 secondes");
     }
 
-    /**
-     * Simulation : Affecte aléatoirement une station à chaque train toutes les 10 secondes
-     */
     @Scheduled(fixedRate = 10000) // 10000 ms = 10 secondes
+    @Transactional
     public void simulateTrainMovement() {
         List<Train> trains = this.getAllTrains();
-        List<ElementVoie> elementVoies = elementVoieRepository.findAllElementVoie();
+        List<ElementVoie> elementVoies = elementVoieRepository.findAll();
 
-        // Vérification qu'il y a des trains et des éléments de voie
         if (trains.isEmpty()) {
             log.warn("Aucun train trouvé pour la simulation");
             return;
@@ -78,20 +67,15 @@ public class TrainService {
 
         log.info("=== SIMULATION - Mise à jour de la position des trains ===");
 
-        // Boucle sur chaque train
         for (Train train : trains) {
-            // Sélection aléatoire d'une station
-            ElementVoie randomElementVoie = elementVoies.get(random.nextInt(elementVoies.size()));
+                ElementVoie randomElementVoie = elementVoies.get(random.nextInt(elementVoies.size()));
+                float newVitesse = 60 + random.nextFloat() * 40;
 
-            // Génération d'une vitesse aléatoire entre 60 et 100 km/h
-            float newVitesse = 60 + random.nextFloat() * 40;
+                train.setPosition(randomElementVoie);
+                train.setVitesse(newVitesse);
+                train.setDateArriveePosition(new Date());
 
-            // Mise à jour du train
-            train.setVitesse(newVitesse);
-            train.setDateArriveePosition(new Date());
-
-            // Sauvegarde en base
-            trainRepository.save(train);
+                trainRepository.save(train);
 
             log.info("Train ID {} | ElementVoie ID: '{}' | Vitesse: {:.2f} km/h | Date: {}",
                     train.getId(),
@@ -101,5 +85,9 @@ public class TrainService {
         }
 
         log.info("=== Fin de la mise à jour - {} trains déplacés ===", trains.size());
+        //TODO creer des trajets puis des horaires , puis sur les trajets je pourrai recup le train en question et
+        // sa position cad sur quelle station et sur quel element de voie
+
+
     }
 }
