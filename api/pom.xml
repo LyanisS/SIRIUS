@@ -1,5 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -73,6 +73,36 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.10.1</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>ci-integ</id>
+            <properties>
+                <spring.profiles.active>ci-integ</spring.profiles.active>
+                <spring.datasource.url>"${{ vars.INTEG_DATASOURCE_URL }}</spring.datasource.url>
+                <spring.datasource.username>${{ vars.INTEG_DATASOURCE_USERNAME }}</spring.datasource.username>
+                <spring.datasource.password>${{ secrets.INTEG_DATASOURCE_PASSWORD }}</spring.datasource.password>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>ci-prod</id>
+            <properties>
+                <spring.profiles.active>ci-prod</spring.profiles.active>
+                <spring.datasource.url>${{ vars.PROD_DATASOURCE_URL }}</spring.datasource.url>
+                <spring.datasource.username>${{ vars.PROD_DATASOURCE_USERNAME }}</spring.datasource.username>
+                <spring.datasource.password>${{ secrets.PROD_DATASOURCE_PASSWORD }}</spring.datasource.password>
+            </properties>
+        </profile>
+    </profiles>
 </project>
