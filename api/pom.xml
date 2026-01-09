@@ -86,6 +86,19 @@
     </build>
     <profiles>
         <profile>
+            <id>local</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <spring.profiles.active>local</spring.profiles.active>
+                <spring.datasource.url>jdbc:postgresql://localhost:5432/pcc</spring.datasource.url>
+                <spring.datasource.username>pcc</spring.datasource.username>
+                <spring.datasource.password>pcc</spring.datasource.password>
+            </properties>
+        </profile>
+
+        <profile>
             <id>ci-integ</id>
             <properties>
                 <spring.profiles.active>ci-integ</spring.profiles.active>
