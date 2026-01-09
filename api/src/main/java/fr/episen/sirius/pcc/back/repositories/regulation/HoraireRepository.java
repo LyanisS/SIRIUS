@@ -1,0 +1,16 @@
+package fr.episen.sirius.pcc.back.repositories.regulation;
+
+import fr.episen.sirius.pcc.back.models.regulation.Horaire;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface HoraireRepository extends JpaRepository<Horaire, Long> {
+
+    @Query("SELECT h FROM Horaire h WHERE h.trajet.id = :trajetId ORDER BY h.dateArriveeTheorique ASC")
+    List<Horaire> findByTrajetOrderByDateArriveeTheorique(@Param("trajetId") Long trajetId);
+}

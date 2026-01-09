@@ -1,9 +1,6 @@
 package fr.episen.sirius.pcc.back.services.regulation;
-
-import fr.episen.sirius.pcc.back.models.regulation.ElementVoie;
-import fr.episen.sirius.pcc.back.models.regulation.Train;
-import fr.episen.sirius.pcc.back.repositories.regulation.ElementVoieRepository;
-import fr.episen.sirius.pcc.back.repositories.regulation.TrainRepository;
+import fr.episen.sirius.pcc.back.models.regulation.*;
+import fr.episen.sirius.pcc.back.repositories.regulation.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,7 +11,6 @@ import javax.annotation.PostConstruct;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 
 @Service
 @Slf4j
@@ -24,70 +20,118 @@ public class TrainService {
     private TrainRepository trainRepository;
 
     @Autowired
+    private TrajetRepository trajetRepository;
+
+    @Autowired
+    private HoraireRepository horaireRepository;
+
+    @Autowired
     private ElementVoieRepository elementVoieRepository;
 
-    private Random random = new Random();
-
-    /**
-     * Récupère la liste de tous les trains
-     * @return Liste des trains
-     */
     public List<Train> getAllTrains() {
-        log.info("Récupération de tous les trains");
-        List<Train> trains = trainRepository.findAll();
-        log.info("Nombre de trains trouvés: {}", trains.size());
-        return trains;
+        return trainRepository.findAll();
     }
 
     public Optional<Train> getTrainById(Long id) {
-        log.info("Récupération du train avec l'ID: {}", id);
         return trainRepository.findById(id);
     }
 
-    @PostConstruct
-    public void init() {
-        log.info("Simulation de mouvement des trains démarrée - Mise à jour toutes les 10 secondes");
+    @Scheduled(fixedRate = 20000)
+    @Transactional
+    public void updateAllTrainPositions() {
+        Date maintenant = new Date();
+        log.info("\n=== Mise a jour positions a {} ===", maintenant);
+
+        List<Trajet> trajets = trajetRepository.findAll();
+
+        for (Trajet trajet : trajets) {
+            assert trajet.getTrain() != null;
+
+            RecupPositionTrain(trajet, maintenant);
+        }
     }
 
-    @Scheduled(fixedRate = 10000) // 10000 ms = 10 secondes
-    @Transactional
-    public void simulateTrainMovement() {
-        List<Train> trains = this.getAllTrains();
-        List<ElementVoie> elementVoies = elementVoieRepository.findAll();
+    private void RecupPositionTrain(Trajet trajet, Date maintenant) {
+        Train train = trajet.getTrain();
 
-        if (trains.isEmpty()) {
-            log.warn("Aucun train trouvé pour la simulation");
+        List<Horaire> horaires = horaireRepository.findByTrajetOrderByDateArriveeTheorique(trajet.getId());
+
+        if (horaires.isEmpty()) {
+            log.warn("Train {} : Aucun horaire trouve pour le trajet {}", train.getId(), trajet.getId());
             return;
         }
 
-        if (elementVoies.isEmpty()) {
-            log.warn("Aucun élément de voie trouvé pour la simulation");
+        Horaire horaireActuel = RecupHorairesActuel(horaires, maintenant);
+
+        if (horaireActuel == null) {
+            log.info("Train {} : Hors service", train.getId());
             return;
         }
 
-        log.info("=== SIMULATION - Mise à jour de la position des trains ===");
+        LigneStation ligneStation = horaireActuel.getLigneStation();
+        Optional<ElementVoie> elementVoieOpt = elementVoieRepository.findByLigneStationId(ligneStation.getId());
 
-        for (Train train : trains) {
-                ElementVoie randomElementVoie = elementVoies.get(random.nextInt(elementVoies.size()));
-                float newVitesse = 60 + random.nextFloat() * 40;
 
-                train.setPosition(randomElementVoie);
-                train.setVitesse(newVitesse);
-                train.setDateArriveePosition(new Date());
+        ElementVoie elementVoie = elementVoieOpt.get();
+        float vitesse = calculeVitesse(horaireActuel, horaires, maintenant);
 
-                trainRepository.save(train);
+        train.setPosition(elementVoie);
+        train.setVitesse(vitesse);
+        train.setDateArriveePosition(maintenant);
+        trainRepository.save(train);
 
-            log.info("Train ID {} | ElementVoie ID: '{}' | Vitesse: {:.2f} km/h | Date: {}",
-                    train.getId(),
-                    randomElementVoie.getId(),
-                    newVitesse,
-                    train.getDateArriveePosition());
+        String etat = (vitesse == 0) ? "A l'arret" : "En mouvement";
+        log.info("Train {} | {} | Station: {} | ElementVoie: {} | Vitesse: {} km/h",
+                train.getId(),
+                etat,
+                ligneStation.getStation().getNom(),
+                elementVoie.getId(),
+                String.format("%.1f", vitesse));
+    }
+
+    private Horaire RecupHorairesActuel(List<Horaire> horaires, Date maintenant) {
+        for (int i = 0; i < horaires.size(); i++) {
+            Horaire horaire = horaires.get(i);
+            Date arrivee = horaire.getDateArriveeTheorique();
+            Date depart = horaire.getDateDepartTheorique();
+
+            if (maintenant.compareTo(arrivee) >= 0 && maintenant.compareTo(depart) <= 0) {
+                return horaire;
+            }
+
+            if (i < horaires.size() - 1) {
+                Horaire prochainHoraire = horaires.get(i + 1);
+                Date prochaineArrivee = prochainHoraire.getDateArriveeTheorique();
+
+                if (maintenant.compareTo(depart) > 0 && maintenant.compareTo(prochaineArrivee) < 0) {
+                    return horaire;
+                }
+            }
         }
 
-        log.info("=== Fin de la mise à jour - {} trains déplacés ===", trains.size());
-        //TODO creer des trajets puis des horaires , puis sur les trajets je pourrai recup le train en question et
-        // sa position cad sur quelle station et sur quel element de voie
+        return null;
+    }
 
+    private float calculeVitesse(Horaire horaireActuel, List<Horaire> horaires, Date maintenant) {
+        int indexActuel = horaires.indexOf(horaireActuel);
+        Date arrivee = horaireActuel.getDateArriveeTheorique();
+        Date depart = horaireActuel.getDateDepartTheorique();
 
+        if (maintenant.compareTo(arrivee) >= 0 && maintenant.compareTo(depart) <= 0) {
+            return 0.0f;
+        }
+
+        if (indexActuel < horaires.size() - 1) {
+            Horaire prochainHoraire = horaires.get(indexActuel + 1);
+            long dureeTrajet = prochainHoraire.getDateArriveeTheorique().getTime() - horaireActuel.getDateDepartTheorique().getTime();
+            float distanceKm = 2.0f;
+
+            if (dureeTrajet > 0) {
+                float dureeHeures = dureeTrajet / 3600000.0f;
+                return distanceKm / dureeHeures;
+            }
+        }
+
+        return 0.0f;
     }
 }
