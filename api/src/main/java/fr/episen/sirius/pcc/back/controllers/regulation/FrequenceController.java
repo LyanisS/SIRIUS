@@ -22,13 +22,13 @@ public class FrequenceController {
 
     /**
      * GET /api/frequences/trajets
-     * @param days nombre de jours à générer
+     * @param hours nombre d'heures à générer
      * Récupère toutes les fréquences utilisées lors de la génération
      */
     @GetMapping("/trajets")
-    public ResponseEntity<List<Frequence>> trajets(@RequestParam int days) {
+    public ResponseEntity<List<Frequence>> trajets(@RequestParam int hours) {
         log.info("GET /api/frequences/trajets");
-        List<Frequence> frequences = frequenceService.generateTrajets(days);
+        List<Frequence> frequences = frequenceService.generateTrajets(hours);
         return ResponseEntity.ok(frequences);
     }
 }
