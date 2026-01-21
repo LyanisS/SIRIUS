@@ -21,36 +21,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set env variables and secrets based on branch
-        run: |
-          set_prop() {
-            file="$1"
-            key="$2"
-            value="$3"
-          
-            if grep -q "^$key=" "$file"; then
-            sed -i "s|^$key=.*|$key=$value|" "$file"
-            else
-            echo "$key=$value" >> "$file"
-            fi
-          }
-  
-          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            set_prop $API_CONFIG_FILE spring.datasource.url "${{ vars.INTEG_DATASOURCE_URL }}"
-            set_prop $API_CONFIG_FILE spring.datasource.username "${{ vars.INTEG_DATASOURCE_USERNAME }}"
-            set_prop $API_CONFIG_FILE spring.datasource.password "${{ secrets.INTEG_DATASOURCE_PASSWORD }}"
-          elif [[ "${GITHUB_REF}" == "refs/heads/prod" ]]; then
-            set_prop $API_CONFIG_FILE spring.datasource.url "${{ vars.PROD_DATASOURCE_URL }}"
-            set_prop $API_CONFIG_FILE spring.datasource.username "${{ vars.PROD_DATASOURCE_USERNAME }}"
-            set_prop $API_CONFIG_FILE spring.datasource.password "${{ secrets.PROD_DATASOURCE_PASSWORD }}"
-          else
-            echo "Workflow is running on wrong branch. Exiting..."
-            exit 1
-          fi
-      - name: Build api with Maven
+      - name: Build api for prod with Maven
+        if: github.ref_name == 'prod'
         run: |
           cd $GITHUB_WORKSPACE/api
-          mvn package
+          mvn package -Pci-prod
+      - name: Build api for integration with Maven
+        if: github.ref_name == 'main'
+        run: |
+          cd $GITHUB_WORKSPACE/api
+          mvn package -Pci-integ
       - name: Upload API artifact
         uses: actions/upload-artifact@v4
         with:
