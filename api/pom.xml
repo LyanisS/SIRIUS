@@ -73,49 +73,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>local</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <spring.profiles.active>local</spring.profiles.active>
-                <spring.datasource.url>jdbc:postgresql://localhost:5432/pcc</spring.datasource.url>
-                <spring.datasource.username>pcc</spring.datasource.username>
-                <spring.datasource.password>pcc</spring.datasource.password>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>ci-integ</id>
-            <properties>
-                <spring.profiles.active>ci-integ</spring.profiles.active>
-                <spring.datasource.url>${{ vars.INTEG_DATASOURCE_URL }}</spring.datasource.url>
-                <spring.datasource.username>${{ vars.INTEG_DATASOURCE_USERNAME }}</spring.datasource.username>
-                <spring.datasource.password>${{ secrets.INTEG_DATASOURCE_PASSWORD }}</spring.datasource.password>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>ci-prod</id>
-            <properties>
-                <spring.profiles.active>ci-prod</spring.profiles.active>
-                <spring.datasource.url>${{ vars.PROD_DATASOURCE_URL }}</spring.datasource.url>
-                <spring.datasource.username>${{ vars.PROD_DATASOURCE_USERNAME }}</spring.datasource.username>
-                <spring.datasource.password>${{ secrets.PROD_DATASOURCE_PASSWORD }}</spring.datasource.password>
-            </properties>
-        </profile>
-    </profiles>
 </project>
