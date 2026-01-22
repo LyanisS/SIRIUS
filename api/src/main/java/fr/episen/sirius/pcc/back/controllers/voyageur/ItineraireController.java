@@ -5,6 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.ArrayList;
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/itineraires")
@@ -20,7 +23,6 @@ public class ItineraireController {
             @RequestParam Long depart,
             @RequestParam Long arrivee) {
 
-        log.info(" Requête d'itinéraire: {} → {}", depart, arrivee);
 
         if (depart.equals(arrivee)) {
             return ResponseEntity.badRequest()
@@ -31,9 +33,33 @@ public class ItineraireController {
                 itineraireService.calculerItineraire(depart, arrivee);
 
         if (resultat == null) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity
+                    .badRequest()
+                    .body("Cette station n'existe pas, veuillez Choisir une autre plzz !!");
         }
 
-        return ResponseEntity.ok(resultat);
+
+        ItineraireSimplifie simplifie = new ItineraireSimplifie(resultat);
+
+        return ResponseEntity.ok(simplifie);
+    }
+
+    public static class ItineraireSimplifie {
+        public String stationDepart;
+        public String stationArrivee;
+        public List<String> details;
+        public int nombreChangements;
+        public int nombreStations;
+
+        public ItineraireSimplifie(ItineraireService.ItineraireResult resultat) {
+            this.stationDepart = resultat.stationDepart.getNom();
+            this.stationArrivee = resultat.stationArrivee.getNom();
+            this.details = new ArrayList<>();
+            for (ItineraireService.PointDePassage point : resultat.pointsDePassage) {
+                this.details.add(point.station.getNom());
+            }
+            this.nombreChangements = resultat.nombreChangements;
+            this.nombreStations = resultat.nombreStations;
+        }
     }
 }
