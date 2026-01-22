@@ -4,6 +4,7 @@ import requests
 import random
 import sys
 import argparse
+from datetime import datetime, timedelta
 
 # Configuration
 API_BASE_URL = "http://localhost:8080/api"
@@ -21,6 +22,9 @@ MOTIFS_INCIDENTS = [
     "Colis suspect signalé"
 ]
 
+# Délais de résoluton du problème (entre 5 min et 2h)
+RESOLUTION_DELAY_RANGE = (5, 120)
+
 def get_active_trajets(api_base_url):
     """Récupère les trajets en cours via l'API"""
     try:
@@ -33,9 +37,14 @@ def get_active_trajets(api_base_url):
 
 def create_incident(api_base_url, trajet_id, message):
     """Créée un incident via l'API"""
+
+    resolution_delay_minutes = random.randint(*RESOLUTION_DELAY_RANGE)
+    date_fin = datetime.now() + timedelta(minutes=resolution_delay_minutes)
+
     incident_data = {
         "message": message,
-        "trajetId": trajet_id
+        "trajetId": trajet_id,
+        "dateFin": date_fin.isoformat()
     }
 
     try:
@@ -46,7 +55,7 @@ def create_incident(api_base_url, trajet_id, message):
         )
         response.raise_for_status()
         incident = response.json()
-        print(f"Incident créé (id : {incident['id']}) pour le trajet {trajet_id} avec le motif   : {message}")
+        print(f"Incident créé (id : {incident['id']}) pour le trajet {trajet_id}, fin de l'incident dans {resolution_delay_minutes} minutes avec le motif : {message}")
         return incident
     except Exception as e:
         print(f"Erreur lors de la création de l'incident : {e}")
