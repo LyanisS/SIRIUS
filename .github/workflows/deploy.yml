@@ -27,14 +27,14 @@ jobs:
             file="$1"
             key="$2"
             value="$3"
-          
+
             if grep -q "^$key=" "$file"; then
             sed -i "s|^$key=.*|$key=$value|" "$file"
             else
             echo "$key=$value" >> "$file"
             fi
           }
-  
+
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             set_prop $API_CONFIG_FILE spring.datasource.url "${{ vars.INTEG_DATASOURCE_URL }}"
             set_prop $API_CONFIG_FILE spring.datasource.username "${{ vars.INTEG_DATASOURCE_USERNAME }}"

@@ -1,0 +1,12 @@
+[Unit]
+Description=PCC Mock Incidents Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/pcc/IncidentMock.py --api-url http://api-prod.pcc.internal:8080/api
+Restart=on-failure
+RestartSec=1800
+
+[Install]
+WantedBy=multi-user.target
