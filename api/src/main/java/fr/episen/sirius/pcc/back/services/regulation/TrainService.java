@@ -1,20 +1,14 @@
 package fr.episen.sirius.pcc.back.services.regulation;
-
-import fr.episen.sirius.pcc.back.models.regulation.ElementVoie;
-import fr.episen.sirius.pcc.back.models.regulation.Train;
-import fr.episen.sirius.pcc.back.repositories.regulation.ElementVoieRepository;
-import fr.episen.sirius.pcc.back.repositories.regulation.TrainRepository;
+import fr.episen.sirius.pcc.back.models.regulation.*;
+import fr.episen.sirius.pcc.back.repositories.regulation.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.PostConstruct;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.sql.Time;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -24,70 +18,151 @@ public class TrainService {
     private TrainRepository trainRepository;
 
     @Autowired
+    private TrajetRepository trajetRepository;
+
+    @Autowired
+    private HoraireRepository horaireRepository;
+
+    @Autowired
     private ElementVoieRepository elementVoieRepository;
 
-    private Random random = new Random();
+    @Autowired
+    private FrequenceRepository frequenceRepository;
 
-    /**
-     * Récupère la liste de tous les trains
-     * @return Liste des trains
-     */
+    private static final float DISTANCE_STATION = 2.0f;
+    private static final float VITESSE_MAX = 80.0f;
+
     public List<Train> getAllTrains() {
-        log.info("Récupération de tous les trains");
-        List<Train> trains = trainRepository.findAll();
-        log.info("Nombre de trains trouvés: {}", trains.size());
-        return trains;
+        return trainRepository.findAll();
     }
 
     public Optional<Train> getTrainById(Long id) {
-        log.info("Récupération du train avec l'ID: {}", id);
         return trainRepository.findById(id);
     }
 
-    @PostConstruct
-    public void init() {
-        log.info("Simulation de mouvement des trains démarrée - Mise à jour toutes les 10 secondes");
+    /**
+     * Mise à jour toutes les 20 secondes
+     */
+    @Scheduled(fixedRate = 20000)
+    @Transactional
+    public void updateAllTrainPositions() {
+        Date maintenant = new Date();
+        log.info("\n=== POSITIONS {} ===", maintenant);
+
+        List<Trajet> trajets = trajetRepository.findAll();
+        int total = 0;
+
+        for (Trajet trajet : trajets) {
+            if (trajet.getTrain() == null) continue;
+
+            List<Horaire> horaires = horaireRepository.findByTrajetOrderByDateArriveeTheorique(trajet.getId());
+            if (horaires.isEmpty()) continue;
+
+            if (updateTrain(trajet, horaires, maintenant)) {
+                total++;
+            }
+        }
+
+        log.info("\nTotal: {} trains\n", total);
     }
 
-    @Scheduled(fixedRate = 10000) // 10000 ms = 10 secondes
-    @Transactional
-    public void simulateTrainMovement() {
-        List<Train> trains = this.getAllTrains();
-        List<ElementVoie> elementVoies = elementVoieRepository.findAll();
+    private boolean updateTrain(Trajet trajet, List<Horaire> horaires, Date maintenant) {
+        Train train = trajet.getTrain();
+        Ligne ligne = trajet.getLigne();
 
-        if (trains.isEmpty()) {
-            log.warn("Aucun train trouvé pour la simulation");
-            return;
+        // Trouver où est le train
+        for (int i = 0; i < horaires.size(); i++) {
+            Horaire horaire = horaires.get(i);
+            Date arrivee = horaire.getDateArriveeTheorique();
+            Date depart = horaire.getDateDepartTheorique();
+
+            // si Train à l'arrêt
+            if (maintenant.compareTo(arrivee) >= 0 && maintenant.compareTo(depart) <= 0) {
+                afficherTrain(train, ligne, horaire, 0.0f, maintenant);
+                return true;
+            }
+
+            // si en mouvement
+            if (i < horaires.size() - 1) {
+                Horaire prochainHoraire = horaires.get(i + 1);
+                Date prochaineArrivee = prochainHoraire.getDateArriveeTheorique();
+
+                if (maintenant.compareTo(depart) > 0 && maintenant.compareTo(prochaineArrivee) < 0) {
+                    long duree = prochaineArrivee.getTime() - depart.getTime();
+                    float vitesse = calculerVitesse(duree);
+                    afficherTrain(train, ligne, horaire, vitesse, maintenant);
+                    return true;
+                }
+            }
         }
 
-        if (elementVoies.isEmpty()) {
-            log.warn("Aucun élément de voie trouvé pour la simulation");
-            return;
+        return false;
+    }
+
+    private void afficherTrain(Train train, Ligne ligne, Horaire horaire, float vitesse, Date maintenant) {
+        LigneStation ligneStation = horaire.getLigneStation();
+        Station station = ligneStation.getStation();
+
+        Optional<ElementVoie> elementVoieOpt = elementVoieRepository.findByLigneStationId(ligneStation.getId());
+        if (elementVoieOpt.isEmpty()) return;
+
+        ElementVoie elementVoie = elementVoieOpt.get();
+        String typePeriode = getTypePeriode(ligne, maintenant);
+
+        train.setPosition(elementVoie);
+        train.setVitesse(vitesse);
+        train.setDateArriveePosition(maintenant);
+        trainRepository.save(train);
+
+        log.info("Train {} | Station: {} | Element voie: {} | Vitesse: {} km/h | {}",
+                train.getId(),
+                station.getNom(),
+                elementVoie.getId(),
+                String.format("%.1f", vitesse),
+                typePeriode);
+    }
+
+    private float calculerVitesse(long dureeMs) {
+        if (dureeMs <= 0) return 0;
+        float heures = dureeMs / 3600000.0f;
+        float vitesse = DISTANCE_STATION / heures;
+        return Math.min(vitesse, VITESSE_MAX);
+    }
+
+    private String getTypePeriode(Ligne ligne, Date maintenant) {
+        try {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(maintenant);
+
+            int jourSemaine = cal.get(Calendar.DAY_OF_WEEK);
+            long jourId = (jourSemaine == 1) ? 7 : jourSemaine - 1;
+
+            @SuppressWarnings("deprecation")
+            Time heureActuelle = new Time(
+                    cal.get(Calendar.HOUR_OF_DAY),
+                    cal.get(Calendar.MINUTE),
+                    cal.get(Calendar.SECOND)
+            );
+
+            List<Frequence> frequences = frequenceRepository.findFrequenceApplicable(
+                    ligne,
+                    jourId,
+                    maintenant,
+                    heureActuelle
+            );
+
+            if (!frequences.isEmpty()) {
+                Frequence freq = frequences.get(0);
+                int recurrence = freq.getRecurrence();
+
+                if (recurrence <= 2) return "HEURE_POINTE";
+                if (recurrence <= 4) return "HEURE_NORMALE";
+                if (recurrence <= 5) return "HEURE_WEEKEND";
+                return "HEURE_CREUSE";
+            }
+        } catch (Exception e) {
+
         }
-
-        log.info("=== SIMULATION - Mise à jour de la position des trains ===");
-
-        for (Train train : trains) {
-                ElementVoie randomElementVoie = elementVoies.get(random.nextInt(elementVoies.size()));
-                float newVitesse = 60 + random.nextFloat() * 40;
-
-                train.setPosition(randomElementVoie);
-                train.setVitesse(newVitesse);
-                train.setDateArriveePosition(new Date());
-
-                trainRepository.save(train);
-
-            log.info("Train ID {} | ElementVoie ID: '{}' | Vitesse: {:.2f} km/h | Date: {}",
-                    train.getId(),
-                    randomElementVoie.getId(),
-                    newVitesse,
-                    train.getDateArriveePosition());
-        }
-
-        log.info("=== Fin de la mise à jour - {} trains déplacés ===", trains.size());
-        //TODO creer des trajets puis des horaires , puis sur les trajets je pourrai recup le train en question et
-        // sa position cad sur quelle station et sur quel element de voie
-
-
+        return "INCONNU";
     }
 }
