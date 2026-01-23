@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import java.sql.Time;
 import java.util.Date;
 import java.util.List;
@@ -31,4 +30,12 @@ public interface FrequenceRepository extends JpaRepository<Frequence, Long> {
             @Param("date") Date date,
             @Param("heure") Time heure
     );
+}
+    @Query(value = "SELECT * FROM Frequence " +
+            "WHERE datedebut <= CURRENT_DATE " +
+            "AND datefin >= CURRENT_DATE " +
+            "AND (heuredebut <= CURRENT_TIME " +
+            "OR heuredebut <= CURRENT_TIME + INTERVAL '?1 hours')",
+            nativeQuery = true)
+    List<Frequence> findActiveFrequencesForHours(@Param("hours") int hours);
 }

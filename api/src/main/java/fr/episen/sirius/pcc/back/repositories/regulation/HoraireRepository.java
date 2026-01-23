@@ -13,4 +13,7 @@ public interface HoraireRepository extends JpaRepository<Horaire, Long> {
 
     @Query("SELECT h FROM Horaire h WHERE h.trajet.id = :trajetId ORDER BY h.dateArriveeTheorique ASC")
     List<Horaire> findByTrajetOrderByDateArriveeTheorique(@Param("trajetId") Long trajetId);
+  
+    @Query(value="SELECT * FROM Horaire", nativeQuery = true)
+    List<Horaire> findAllHoraires();
 }
