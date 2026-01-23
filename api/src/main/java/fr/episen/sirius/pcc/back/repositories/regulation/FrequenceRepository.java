@@ -30,7 +30,7 @@ public interface FrequenceRepository extends JpaRepository<Frequence, Long> {
             @Param("date") Date date,
             @Param("heure") Time heure
     );
-}
+
     @Query(value = "SELECT * FROM Frequence " +
             "WHERE datedebut <= CURRENT_DATE " +
             "AND datefin >= CURRENT_DATE " +
