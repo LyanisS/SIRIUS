@@ -7,6 +7,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TrainRepository extends JpaRepository<Train, Long> {
-    @Query(value="SELECT * FROM Train", nativeQuery = true)
-    Train findAllTrains();
 }
