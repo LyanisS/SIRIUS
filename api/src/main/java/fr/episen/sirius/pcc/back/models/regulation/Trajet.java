@@ -20,4 +20,12 @@ public class Trajet {
     @ManyToOne
     @JoinColumn(name = "train", nullable = false)
     private Train train;
+
+    public Trajet(Long id, Ligne ligne, Train train) {
+        this.id = id;
+        this.ligne = ligne;
+        this.train = train;
+    }
+
+    public Trajet() {}
 }

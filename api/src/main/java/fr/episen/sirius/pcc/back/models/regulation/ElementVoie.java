@@ -19,4 +19,8 @@ public class ElementVoie {
     @ManyToOne
     @JoinColumn(name = "elementsuivant")
     private ElementVoie elementSuivant;
+
+    @ManyToOne
+    @JoinColumn(name = "lignestation")
+    private LigneStation ligneStation;
 }
