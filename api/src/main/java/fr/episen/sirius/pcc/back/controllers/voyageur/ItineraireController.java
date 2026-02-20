@@ -1,6 +1,7 @@
 package fr.episen.sirius.pcc.back.controllers.voyageur;
 
 import fr.episen.sirius.pcc.back.dto.voyageur.ItineraireSimplifie;
+import fr.episen.sirius.pcc.back.models.voyageur.ItineraireResult;
 import fr.episen.sirius.pcc.back.services.voyageur.ItineraireService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
