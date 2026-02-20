@@ -56,11 +56,29 @@ public class FrequenceService {
         Date date = dateDebut.getTime();
 
         for (Frequence frequence : frequences) {
+            if (frequence.getJours().isEmpty()) continue;
+
+            List<LigneStation> stations;
+            if (frequence.getSens()) {
+                stations = ligneStationRepository.findByLigneOrderByOrdreAsc(frequence.getLigne());
+            } else {
+                stations = ligneStationRepository.findByLigneOrderByOrdreDesc(frequence.getLigne());
+            }
+            Map<LigneStation, ElementVoie> ligneStationElementVoieMap = new HashMap<>();
+            for (int i = 0; i < stations.size(); i++) {
+                if (i==0) ligneStationElementVoieMap.put(stations.get(i), null);
+                else ligneStationElementVoieMap.put(
+                        stations.get(i),
+                        elementVoieRepository.findElementVoieBetweenStations(stations.get(i-1), stations.get(i))
+                );
+            }
+            List<Train> trains = trainRepository.findAll();
+
             for (Jour jourFrequence : frequence.getJours()) {
                 if (Objects.equals(jourActuel.getId(), jourFrequence.getId())) {
                     if (date.before(frequence.getDateDebut()) || date.after(frequence.getDateFin())) continue;
 
-                    this.generateTrajet(frequence, dateDebut, dateFin);
+                    this.generateTrajet(frequence, dateDebut, dateFin, ligneStationElementVoieMap, trains);
                 }
             }
         }
@@ -68,15 +86,7 @@ public class FrequenceService {
         return frequences;
     }
 
-    private void generateTrajet(Frequence frequence, Calendar dateDebut, Calendar dateFin) {
-        List<LigneStation> stations;
-        if (frequence.getSens()) {
-            stations = ligneStationRepository.findByLigneOrderByOrdreAsc(frequence.getLigne());
-        } else {
-            stations = ligneStationRepository.findByLigneOrderByOrdreDesc(frequence.getLigne());
-        }
-        List<Train> trains = trainRepository.findAll();
-
+    private void generateTrajet(Frequence frequence, Calendar dateDebut, Calendar dateFin, Map<LigneStation, ElementVoie> ligneStationElementVoieMap, List<Train> trains) {
         Calendar dateProchainTrajet = (Calendar) dateDebut.clone();
 
         while (!dateProchainTrajet.after(dateFin)) {
@@ -88,19 +98,20 @@ public class FrequenceService {
             trajet.setTrain(train);
             trajet = trajetRepository.save(trajet);
 
-            this.createHorairesForTrajet(trajet, stations, dateProchainTrajet.getTime());
+            this.createHorairesForTrajet(trajet, ligneStationElementVoieMap, dateProchainTrajet.getTime());
             dateProchainTrajet.add(Calendar.MINUTE, frequence.getRecurrence());
         }
     }
 
-    private void createHorairesForTrajet(Trajet trajet, List<LigneStation> stations, Date startTime) {
+    private void createHorairesForTrajet(Trajet trajet, Map<LigneStation, ElementVoie> ligneStationElementVoieMap, Date startTime) {
         Calendar dateTrajet = Calendar.getInstance();
         dateTrajet.setTime(startTime);
 
-        log.info("- Création de {} horaires pour le trajet n°{}  ({})", stations.size(), trajet.getId(), startTime);
+        log.info("- Création de {} horaires pour le trajet n°{}  ({})", ligneStationElementVoieMap.size(), trajet.getId(), startTime);
 
-        for (int i = 0; i < stations.size(); i++) {
-            LigneStation station = stations.get(i);
+        int i = 0;
+        for (Map.Entry<LigneStation, ElementVoie> entry : ligneStationElementVoieMap.entrySet()) {
+            LigneStation station = entry.getKey();
 
             Horaire horaire = new Horaire();
             horaire.setTrajet(trajet);
@@ -109,30 +120,32 @@ public class FrequenceService {
             if (i == 0) {
                 horaire.setDateDepartTheorique(dateTrajet.getTime());
                 horaire.setDateArriveeTheorique(dateTrajet.getTime());
-                log.info("   Station 1/{} : {} - Départ prévu à {}", stations.size(), station.getStation().getNom(),
+                log.info("   Station 1/{} : {} - Départ prévu à {}", ligneStationElementVoieMap.size(), station.getStation().getNom(),
                         dateTrajet.getTime());
             } else {
-                ElementVoie elementVoie = elementVoieRepository.findElementVoieBetweenStations(stations.get(i-1), station);
+                ElementVoie elementVoie = entry.getValue();
                 double distanceKm = TRIP_LENGTH_KM;
                 if (elementVoie != null) distanceKm = (double) elementVoie.getLongueur() / 1000;
                 int dureeVoyage = (int) Math.ceil((distanceKm / TRAIN_SPEED_KMH) * 60);
                 dateTrajet.add(Calendar.MINUTE, dureeVoyage);
                 horaire.setDateArriveeTheorique(dateTrajet.getTime());
 
-                if (i < stations.size() - 1) {
+                if (i < ligneStationElementVoieMap.size() - 1) {
                     dateTrajet.add(Calendar.MINUTE, STATION_STOP_MINUTES);
                     horaire.setDateDepartTheorique(dateTrajet.getTime());
                     log.info("   Station {}/{}: {} - Arrivé à {}, Départ à {} (+{}min de trajet)", i + 1,
-                            stations.size(), station.getStation().getNom(), horaire.getDateArriveeTheorique(),
+                            ligneStationElementVoieMap.size(), station.getStation().getNom(), horaire.getDateArriveeTheorique(),
                             horaire.getDateDepartTheorique(), dureeVoyage);
                 } else {
                     horaire.setDateDepartTheorique(dateTrajet.getTime());
-                    log.info("   Station {}/{}: {} - Arrivée au terminus à {}", i + 1, stations.size(),
+                    log.info("   Station {}/{}: {} - Arrivée au terminus à {}", i + 1, ligneStationElementVoieMap.size(),
                             station.getStation().getNom(), dateTrajet.getTime());
                 }
             }
 
             horaireRepository.save(horaire);
+
+            i++;
         }
     }
 }
