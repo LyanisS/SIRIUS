@@ -24,7 +24,7 @@ public class ItineraireController {
                     .body("Vous êtes déjà sur place!");
         }
 
-        var resultat = itineraireService.calculerItineraire(depart, arrivee);
+        ItineraireResult resultat = itineraireService.calculerItineraire(depart, arrivee);
 
         if (resultat == null) {
             return ResponseEntity.badRequest()
