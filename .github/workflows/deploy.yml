@@ -39,10 +39,12 @@ jobs:
             set_prop $API_CONFIG_FILE spring.datasource.url "${{ vars.INTEG_DATASOURCE_URL }}"
             set_prop $API_CONFIG_FILE spring.datasource.username "${{ vars.INTEG_DATASOURCE_USERNAME }}"
             set_prop $API_CONFIG_FILE spring.datasource.password "${{ secrets.INTEG_DATASOURCE_PASSWORD }}"
+            set_prop $API_CONFIG_FILE jwt.secret "${{ secrets.INTEG_JWT_SECRET }}"
           elif [[ "${GITHUB_REF}" == "refs/heads/prod" ]]; then
             set_prop $API_CONFIG_FILE spring.datasource.url "${{ vars.PROD_DATASOURCE_URL }}"
             set_prop $API_CONFIG_FILE spring.datasource.username "${{ vars.PROD_DATASOURCE_USERNAME }}"
             set_prop $API_CONFIG_FILE spring.datasource.password "${{ secrets.PROD_DATASOURCE_PASSWORD }}"
+            set_prop $API_CONFIG_FILE jwt.secret "${{ secrets.PROD_JWT_SECRET }}"
           else
             echo "Workflow is running on wrong branch. Exiting..."
             exit 1
