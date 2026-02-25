@@ -1,5 +1,6 @@
 package fr.episen.sirius.pcc.back.models.voyageur;
 
+import fr.episen.sirius.pcc.back.models.regulation.Station;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -24,9 +25,11 @@ public class Itineraire {
     @Column(name = "depart", nullable = false)
     private Boolean depart;
 
-    @Column(name = "stationdepart", nullable = false)
-    private int stationDepart;
+    @ManyToOne
+    @JoinColumn(name = "stationdepart", nullable = false)
+    private Station stationDepart;
 
-    @Column(name = "stationarrivee", nullable = false)
-    private int stationArrivee;
+    @ManyToOne
+    @JoinColumn(name = "stationarrivee", nullable = false)
+    private Station stationArrivee;
 }
