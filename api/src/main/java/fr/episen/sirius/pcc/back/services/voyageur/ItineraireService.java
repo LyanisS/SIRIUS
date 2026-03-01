@@ -1,18 +1,25 @@
 package fr.episen.sirius.pcc.back.services.voyageur;
 
+import fr.episen.sirius.pcc.back.dto.voyageur.CreateItineraireFavoriDTO;
+import fr.episen.sirius.pcc.back.dto.voyageur.ItineraireFavoriDTO;
 import fr.episen.sirius.pcc.back.models.regulation.Ligne;
 import fr.episen.sirius.pcc.back.models.regulation.LigneStation;
 import fr.episen.sirius.pcc.back.models.regulation.Station;
 import fr.episen.sirius.pcc.back.models.voyageur.ItineraireResult;
 import fr.episen.sirius.pcc.back.models.voyageur.PointDePassage;
+import fr.episen.sirius.pcc.back.models.voyageur.Itineraire;
+import fr.episen.sirius.pcc.back.models.voyageur.Utilisateur;
 import fr.episen.sirius.pcc.back.repositories.regulation.LigneStationRepository;
 import fr.episen.sirius.pcc.back.repositories.regulation.StationRepository;
+import fr.episen.sirius.pcc.back.repositories.voyageur.ItineraireRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -23,6 +30,9 @@ public class ItineraireService {
 
     @Autowired
     private LigneStationRepository ligneStationRepository;
+
+    @Autowired
+    private ItineraireRepository itineraireRepository;
 
     public ItineraireResult calculerItineraire(Long stationDepartId, Long stationArriveeId) {
 
@@ -133,5 +143,36 @@ public class ItineraireService {
             }
         }
         return null;
+    }
+
+    public List<ItineraireFavoriDTO> getAllItinerairesFavoris(Utilisateur utilisateur) {
+        List<ItineraireFavoriDTO> itineraireFavorisDTO = new ArrayList<>();
+
+        for (Itineraire itineraireFavori : itineraireRepository.findAllByUtilisateurOrderByIdDesc(utilisateur)) {
+            itineraireFavorisDTO.add(new ItineraireFavoriDTO(itineraireFavori));
+        }
+
+        return itineraireFavorisDTO;
+    }
+
+    public Optional<ItineraireFavoriDTO> createItineraireFavori(Utilisateur utilisateur, CreateItineraireFavoriDTO dto) {
+        Optional<Station> stationDepart = stationRepository.findById(dto.getStationDepartId());
+        if (stationDepart.isEmpty()) return Optional.empty();
+
+        Optional<Station> stationArrivee = stationRepository.findById(dto.getStationArriveeId());
+        if (stationArrivee.isEmpty()) return Optional.empty();
+
+        Itineraire itineraire = new Itineraire();
+        itineraire.setUtilisateur(utilisateur);
+        if (dto.getDate() != null) {
+            itineraire.setDate(dto.getDate());
+        } else {
+            itineraire.setDate(new Date());
+        }
+        itineraire.setDepart(dto.isDepart());
+        itineraire.setStationDepart(stationDepart.get());
+        itineraire.setStationArrivee(stationArrivee.get());
+
+        return Optional.of(new ItineraireFavoriDTO(itineraireRepository.save(itineraire)));
     }
 }
