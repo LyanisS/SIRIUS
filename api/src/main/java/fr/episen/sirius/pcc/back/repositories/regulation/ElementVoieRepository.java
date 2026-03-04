@@ -7,13 +7,14 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface ElementVoieRepository extends JpaRepository<ElementVoie, Long> {
 
     // Trouve l'ElementVoie correspondant à une LigneStation
-    Optional<ElementVoie> findByLigneStationId(Long ligneStationId);
+    List<ElementVoie> findByLigneStationId(Long ligneStationId);
   
     @Query(value="SELECT e FROM ElementVoie e " +
             "WHERE e.id IN (SELECT e2.elementSuivant FROM ElementVoie e2 WHERE e2.ligneStation = :previousLigneStation) " +
