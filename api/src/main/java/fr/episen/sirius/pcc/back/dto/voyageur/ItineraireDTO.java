@@ -1,12 +1,16 @@
-package fr.episen.sirius.pcc.back.models.voyageur;
+package fr.episen.sirius.pcc.back.dto.voyageur;
 
 import fr.episen.sirius.pcc.back.models.regulation.Station;
+import lombok.Data;
+
 import java.util.List;
 
-public class ItineraireResult {
+@Data
+public class ItineraireDTO {
+
     public Station stationDepart;
     public Station stationArrivee;
-    public List<PointDePassage> pointsDePassage;
+    public List<EtapeItineraireDTO> etapes;
     public int nombreChangements;
     public int nombreStations;
 }
