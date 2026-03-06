@@ -1,0 +1,266 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
+
+.itineraire-container{
+    font-family: "DM Sans", sans-serif;
+    max-width: 460px;
+    margin: 0 auto;
+    padding: 24px 18px;
+    background:#f3f4f8;
+    min-height:100vh;
+}
+
+.itineraire-container h2{
+    font-size:22px;
+    font-weight:700;
+    margin: 0 0 16px;
+    color:#181f36;
+}
+
+/* Messages d'erreur */
+.erreur{
+    background:#fff0f0;
+    border-left:4px solid #e53935;
+    padding:10px 12px;
+    border-radius:8px;
+    margin: 0 0 14px;
+    color:#b71c1c;
+    font-weight:500;
+}
+
+/* Formulaire*/
+label{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    color:#181f36;
+    margin: 10px 0 6px;
+}
+
+select{
+    width:100%;
+    padding:10px 14px;
+    border:1.5px solid #dde1ec;
+    border-radius:10px;
+    background:#fff;
+    color:#181f36;
+    font-size:14px;
+    font-family: "DM Sans", sans-serif;
+}
+
+select:focus{
+    outline:none;
+    border-color:#181f36;
+}
+
+.btn-calculer{
+    width:100%;
+    margin-top:10px;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    background:#181f36;
+    color:#fff;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.btn-calculer:hover{ background:#2a3555; }
+
+.resultat{
+    margin-top:18px;
+    background:#fff;
+    border-radius:14px;
+    padding:18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+
+.resultat-header h3{
+    margin:0 0 10px;
+    color:#181f36;
+    font-size:18px;
+    font-weight:800;
+}
+
+.resultat-trajet{
+    display:flex;
+    gap:6px;
+    align-items:center;
+    color:#444;
+    font-weight:600;
+    font-size:14px;
+    margin-bottom:8px;
+}
+
+.resultat-infos{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.resultat-infos span{
+    background:#f3f4f8;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:12px;
+    color:#555;
+    font-weight:600;
+}
+
+/* Couleurs de les lignes */
+.ligne-1{ --c:#FFBE00; --cText:#181f36; }
+.ligne-8{ --c:#CE8BC2; --cText:#fff; }
+
+.timeline{
+    margin-top:14px;
+}
+
+.tl-etape{
+    display:flex;
+    gap:14px;
+}
+
+.tl-track{
+    width:18px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
+/* point qui represente une station */
+.tl-dot{
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    border:2.5px solid #cfd3de;
+    background:#fff;
+    margin-top:2px;
+    z-index:2;
+}
+
+.tl-dot.depart,
+.tl-dot.arrivee{
+    border-color:#181f36;
+    background:#181f36;
+}
+
+/* Dot coloré selon ligne */
+.tl-dot.ligne-1,
+.tl-dot.ligne-8{
+    border-color: var(--c);
+    background: var(--c);
+}
+
+/* Ligne verticale entre les stationz */
+.tl-line{
+    width:4px;
+    flex:1;
+    min-height:22px;
+    border-radius:4px;
+    background:#d7dbe6;
+    margin:2px 0;
+}
+
+/* Ligne colorée selon ligne */
+.tl-line.ligne-1,
+.tl-line.ligne-8{
+    background: var(--c);
+}
+
+.tl-content{
+    flex:1;
+    padding-bottom:16px;
+}
+
+.tl-station-nom{
+    font-size:14px;
+    font-weight:800;
+    color:#181f36;
+    margin-top:0;
+}
+
+/* emoji avec numero de la ligne  */
+.tl-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:4px 10px 4px 6px;
+    border-radius:999px;
+    font-weight:800;
+    font-size:12px;
+    margin-top:6px;
+    background: var(--c);
+    color: var(--cText);
+}
+
+.badge-m{
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:10px;
+    font-weight:900;
+    background: rgba(255,255,255,.35);
+}
+
+/* petite flèche pour afficher les stations desservies*/
+.tl-accordion{ margin-top:8px; }
+
+.tl-accordion-btn{
+    border:none;
+    background:none;
+    padding:0;
+    cursor:pointer;
+    font-family: "DM Sans", sans-serif;
+    font-weight:700;
+    color:#444;
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.tl-chevron{
+    display:inline-block;
+    transform: rotate(90deg);
+    transition: transform .2s;
+}
+
+.tl-chevron.ouvert{ transform: rotate(-90deg); }
+
+/* Liste stations desservies */
+.tl-stations-list{
+    list-style:none;
+    margin:8px 0 0;
+    padding:8px 0 0 14px;
+    border-left:4px solid var(--c, #d7dbe6);
+}
+
+.tl-stations-list li{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:4px 0;
+    font-size:13px;
+    color:#444;
+}
+
+.tl-mini-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background: var(--c, #cfd3de);
+}
+
+/*Correspondance (emoji)*/
+.correspondance{
+    display:inline-block;
+    margin: 8px 0 6px;
+    padding:6px 10px;
+    border-radius:10px;
+    background:#eef1f7;
+    color:#3a4666;
+    font-weight:800;
+    font-size:12px;
+}
