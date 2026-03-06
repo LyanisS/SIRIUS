@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("lignes")
@@ -26,5 +27,12 @@ public class LigneController {
         log.info("GET /api/lignes");
         List<Ligne> lignes = ligneService.getAllLignes();
         return ResponseEntity.ok(lignes);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Ligne> getLigneById(@PathVariable Long id) {
+        log.info("GET /api/lignes/{}", id);
+        Optional<Ligne> ligne = ligneService.getLigneById(id);
+        return ligne.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 }

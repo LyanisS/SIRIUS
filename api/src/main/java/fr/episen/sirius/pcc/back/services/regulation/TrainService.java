@@ -33,7 +33,18 @@ public class TrainService {
     private static final float VITESSE_MAX = 80.0f;
 
     public List<Train> getAllTrains() {
-        return trainRepository.findAll();
+        List<Train> trains = trainRepository.findAll();
+        List<Trajet> trajets = trajetRepository.findAll();
+        Map<Long, Boolean> sensTrain = new HashMap<>();
+        for (Trajet t : trajets) {
+            if (t.getTrain() != null && t.getSens() != null) {
+                sensTrain.put(t.getTrain().getId(), t.getSens());
+            }
+        }
+        for (Train train : trains) {
+            train.setSens(sensTrain.get(train.getId()));
+        }
+        return trains;
     }
 
     public Optional<Train> getTrainById(Long id) {
@@ -46,70 +57,115 @@ public class TrainService {
     @Scheduled(fixedRate = 20000)
     @Transactional
     public void updateAllTrainPositions() {
-        Date maintenant = new Date();
-        log.info("\n=== POSITIONS {} ===", maintenant);
-
-        List<Trajet> trajets = trajetRepository.findAll();
-        int total = 0;
-
-        for (Trajet trajet : trajets) {
-            if (trajet.getTrain() == null) continue;
-
-            List<Horaire> horaires = horaireRepository.findByTrajetOrderByDateArriveeTheorique(trajet.getId());
-            if (horaires.isEmpty()) continue;
-
-            if (updateTrain(trajet, horaires, maintenant)) {
-                total++;
+        try {
+            List<Trajet> trajets = trajetRepository.findAll();
+            for (Trajet trajet : trajets) {
+                if (trajet != null) {
+                    updateTrain(trajet);
+                }
             }
+        } catch (Exception e) {
+            log.debug("Erreur mise à jour positions: {}", e.getMessage());
         }
-
-        log.info("\nTotal: {} trains\n", total);
     }
 
-    private boolean updateTrain(Trajet trajet, List<Horaire> horaires, Date maintenant) {
-        Train train = trajet.getTrain();
-        Ligne ligne = trajet.getLigne();
+    private void updateTrain(Trajet trajet) {
+        try {
+            Train train = trajet.getTrain();
+            if (train == null) {
+                return;
+            }
 
-        // Trouver où est le train
-        for (int i = 0; i < horaires.size(); i++) {
-            Horaire horaire = horaires.get(i);
-            Date arrivee = horaire.getDateArriveeTheorique();
-            Date depart = horaire.getDateDepartTheorique();
+            Ligne ligne = trajet.getLigne();
+            List<Horaire> horairesTrajet = horaireRepository.findByTrajetOrderByDateArriveeTheorique(trajet.getId());
+
+            if (horairesTrajet.isEmpty()) {
+                return;
+            }
+
+            Date maintenant = new Date();
+
+            // Déterminer le sens à partir de l'ordre des horaires
+            boolean sensActuel = true;
+            if (horairesTrajet.size() >= 2) {
+                int premierOrdre = horairesTrajet.get(0).getLigneStation().getOrdre();
+                int dernierOrdre = horairesTrajet.get(horairesTrajet.size() - 1).getLigneStation().getOrdre();
+                sensActuel = premierOrdre <= dernierOrdre;
+            }
+            trajet.setSens(sensActuel);
+            trajetRepository.save(trajet);
+
+            // Trouver où est le train
+            for (int i = 0; i < horairesTrajet.size(); i++) {
+                Horaire horaire = horairesTrajet.get(i);
+
+                if (horaire == null || horaire.getDateArriveeTheorique() == null || horaire.getDateDepartTheorique() == null) {
+                    continue;
+                }
+
+                Date arrivee = horaire.getDateArriveeTheorique();
+                Date depart = horaire.getDateDepartTheorique();
 
             // si Train à l'arrêt
             if (maintenant.compareTo(arrivee) >= 0 && maintenant.compareTo(depart) <= 0) {
-                afficherTrain(train, ligne, horaire, 0.0f, maintenant);
-                return true;
+                afficherTrain(train, ligne, horaire, 0.0f, maintenant, sensActuel);
+                return;
             }
 
-            // si en mouvement
-            if (i < horaires.size() - 1) {
-                Horaire prochainHoraire = horaires.get(i + 1);
-                Date prochaineArrivee = prochainHoraire.getDateArriveeTheorique();
+                // si en mouvement
+                if (i < horairesTrajet.size() - 1) {
+                    Horaire prochainHoraire = horairesTrajet.get(i + 1);
 
-                if (maintenant.compareTo(depart) > 0 && maintenant.compareTo(prochaineArrivee) < 0) {
-                    long duree = prochaineArrivee.getTime() - depart.getTime();
-                    float vitesse = calculerVitesse(duree);
-                    afficherTrain(train, ligne, horaire, vitesse, maintenant);
-                    return true;
+                    if (prochainHoraire != null && prochainHoraire.getDateArriveeTheorique() != null) {
+                        Date prochaineArrivee = prochainHoraire.getDateArriveeTheorique();
+
+                        if (maintenant.compareTo(depart) > 0 && maintenant.compareTo(prochaineArrivee) < 0) {
+                            long duree = prochaineArrivee.getTime() - depart.getTime();
+                            float vitesse = calculerVitesse(duree);
+                            afficherTrain(train, ligne, horaire, vitesse, maintenant, sensActuel);
+                            return;
+                        }
+                    }
                 }
             }
+        } catch (Exception e) {
+            log.debug("Erreur mise à jour position pour trajet: {}", e.getMessage());
         }
-
-        return false;
     }
 
-    private void afficherTrain(Train train, Ligne ligne, Horaire horaire, float vitesse, Date maintenant) {
+    private void afficherTrain(Train train, Ligne ligne, Horaire horaire, float vitesse, Date maintenant, boolean sens) {
         LigneStation ligneStation = horaire.getLigneStation();
         Station station = ligneStation.getStation();
 
-        Optional<ElementVoie> elementVoieOpt = elementVoieRepository.findByLigneStationId(ligneStation.getId());
-        if (elementVoieOpt.isEmpty()) return;
+        List<ElementVoie> tousLesElementVoies = elementVoieRepository.findByLigneStationId(ligneStation.getId());
 
-        ElementVoie elementVoie = elementVoieOpt.get();
-        String typePeriode = getTypePeriode(ligne, maintenant);
+       Set<ElementVoie> elementVoiesDisponibles = new HashSet<>(tousLesElementVoies);
+       List<Train> tousLesTrains = trainRepository.findAll();
+       
+       for (Train trainExistant : tousLesTrains) {
+                if (trainExistant == null || trainExistant.getId().equals(train.getId())) {
+                    continue;
+                }
 
-        train.setPosition(elementVoie);
+        if (trainExistant.getPosition() != null) {
+            elementVoiesDisponibles.removeIf(ev -> ev.getId().equals(trainExistant.getPosition().getId()));
+                }
+            }
+
+
+       ElementVoie elementVoieChoisi;
+       if (!elementVoiesDisponibles.isEmpty()) {
+           elementVoieChoisi = elementVoiesDisponibles.iterator().next();
+       } else if (!tousLesElementVoies.isEmpty()) {
+           elementVoieChoisi = tousLesElementVoies.get(0);
+       } else {
+           log.warn("Aucun élément de voie pour station {} (ligneStation {})", station.getNom(), ligneStation.getId());
+           return;
+       }
+
+       String typePeriode = getTypePeriode(ligne, maintenant);
+
+        train.setPosition(elementVoieChoisi);
         train.setVitesse(vitesse);
         train.setDateArriveePosition(maintenant);
         trainRepository.save(train);
@@ -117,7 +173,7 @@ public class TrainService {
         log.info("Train {} | Station: {} | Element voie: {} | Vitesse: {} km/h | {}",
                 train.getId(),
                 station.getNom(),
-                elementVoie.getId(),
+                elementVoieChoisi.getId(),
                 String.format("%.1f", vitesse),
                 typePeriode);
     }

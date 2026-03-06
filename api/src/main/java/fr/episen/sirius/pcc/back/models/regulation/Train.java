@@ -24,4 +24,7 @@ public class Train {
     @ManyToOne
     @JoinColumn(name = "position", nullable = false)
     private ElementVoie position;
+
+    @Transient //pour èviter que je change le schèma d ela base
+    private Boolean sens;
 }

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -23,5 +24,9 @@ public class LigneService {
         List<Ligne> lignes = ligneRepository.findAll();
         log.info("Nombre de lignes trouvées: {}", lignes.size());
         return lignes;
+    }
+
+    public Optional<Ligne> getLigneById(Long id) {
+        return ligneRepository.findById(id);
     }
 }

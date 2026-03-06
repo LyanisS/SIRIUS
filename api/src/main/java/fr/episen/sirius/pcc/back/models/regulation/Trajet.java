@@ -21,6 +21,9 @@ public class Trajet {
     @JoinColumn(name = "train", nullable = false)
     private Train train;
 
+    @Column(name = "sens")
+    private Boolean sens;
+
     public Trajet(Long id, Ligne ligne, Train train) {
         this.id = id;
         this.ligne = ligne;
