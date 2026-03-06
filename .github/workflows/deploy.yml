@@ -7,7 +7,7 @@ on:
       - prod
     paths:
       - 'api/**'
-      - 'webapp/**'
+      - 'frontend/**'
       - '!*.md'
       - '!*.sql'
       - '!.gitignore'
@@ -67,17 +67,17 @@ jobs:
         uses: actions/checkout@v4
       - name: Install dependencies
         run: |
-          cd $GITHUB_WORKSPACE/webapp
+          cd $GITHUB_WORKSPACE/frontend
           npm install
       - name: Build front with npm
         run: |
-          cd  $GITHUB_WORKSPACE/webapp
+          cd  $GITHUB_WORKSPACE/frontend
           npm run build
       - name: Upload front artifact
         uses: actions/upload-artifact@v4
         with:
           name: front-build
-          path: "${{ github.workspace }}/webapp/build/"
+          path: "${{ github.workspace }}/frontend/build/"
           if-no-files-found: 'error'
 
   deploy:
