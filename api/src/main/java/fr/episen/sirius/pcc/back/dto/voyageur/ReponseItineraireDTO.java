@@ -6,27 +6,36 @@ public class ReponseItineraireDTO {
 
     private String stationDepart;
     private String stationArrivee;
-    private List<String> etapes;
+    private List<EtapeDTO> details;
     private int nombreStations;
-    private int nombreCorrespondances;
+    private int nombreChangements;
 
     public ReponseItineraireDTO(
             String stationDepart,
             String stationArrivee,
-            List<String> etapes,
+            List<EtapeDTO> details,
             int nombreStations,
-            int nombreCorrespondances
-    ) {
+            int nombreChangements) {
+
         this.stationDepart = stationDepart;
         this.stationArrivee = stationArrivee;
-        this.etapes = etapes;
+        this.details = details;
         this.nombreStations = nombreStations;
-        this.nombreCorrespondances = nombreCorrespondances;
+        this.nombreChangements = nombreChangements;
     }
-
-    public String getStationDepart() { return stationDepart; }
-    public String getStationArrivee() { return stationArrivee; }
-    public List<String> getEtapes() { return etapes; }
-    public int getNombreStations() { return nombreStations; }
-    public int getNombreCorrespondances() { return nombreCorrespondances; }
+    public String getStationDepart() {
+        return stationDepart;
+    }
+    public String getStationArrivee() {
+        return stationArrivee;
+    }
+    public List<EtapeDTO> getDetails() {
+        return details;
+    }
+    public int getNombreStations() {
+        return nombreStations;
+    }
+    public int getNombreChangements() {
+        return nombreChangements;
+    }
 }

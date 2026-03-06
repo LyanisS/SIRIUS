@@ -1,10 +1,14 @@
 package fr.episen.sirius.pcc.back.controllers.voyageur;
 
-import fr.episen.sirius.pcc.back.dto.voyageur.ItineraireSimplifie;
+import fr.episen.sirius.pcc.back.dto.voyageur.EtapeDTO;
+import fr.episen.sirius.pcc.back.dto.voyageur.ReponseItineraireDTO;
+import fr.episen.sirius.pcc.back.models.voyageur.ItineraireResult;
 import fr.episen.sirius.pcc.back.services.voyageur.ItineraireService;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/itineraires")
@@ -15,22 +19,26 @@ public class ItineraireController {
     private ItineraireService itineraireService;
 
     @GetMapping("/calculer")
-    public ResponseEntity<?> calculerItineraire(
+    public ReponseItineraireDTO calculer(
             @RequestParam Long depart,
             @RequestParam Long arrivee) {
 
-        if (depart.equals(arrivee)) {
-            return ResponseEntity.badRequest()
-                    .body("Vous êtes déjà sur place!");
-        }
+        ItineraireResult resultat =
+                itineraireService.calculerItineraire(depart, arrivee);
 
-        ItineraireResult resultat = itineraireService.calculerItineraire(depart, arrivee);
+        List<EtapeDTO> etapes = resultat.pointsDePassage.stream()
+                .map(p -> new EtapeDTO(
+                        p.station.getNom(),
+                        p.ligne != null ? p.ligne.getNom() : null
+                ))
+                .toList();
 
-        if (resultat == null) {
-            return ResponseEntity.badRequest()
-                    .body("Aucun itinéraire trouvé");
-        }
-
-        return ResponseEntity.ok(new ItineraireSimplifie(resultat));
+        return new ReponseItineraireDTO(
+                resultat.stationDepart.getNom(),
+                resultat.stationArrivee.getNom(),
+                etapes,
+                resultat.nombreStations,
+                resultat.nombreChangements
+        );
     }
 }
