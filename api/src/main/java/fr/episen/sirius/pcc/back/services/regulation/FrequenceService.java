@@ -86,6 +86,7 @@ public class FrequenceService {
             Trajet trajet = new Trajet();
             trajet.setLigne(frequence.getLigne());
             trajet.setTrain(train);
+            trajet.setSens(frequence.getSens());
             trajet = trajetRepository.save(trajet);
 
             this.createHorairesForTrajet(trajet, stations, dateProchainTrajet.getTime());

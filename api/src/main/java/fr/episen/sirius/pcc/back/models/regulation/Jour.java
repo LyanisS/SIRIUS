@@ -9,12 +9,12 @@ import javax.persistence.*;
 @Table(name = "jour")
 public class Jour {
     public static final Jour LUNDI = new Jour(1L, "Lundi");
-    public static final Jour MARDI = new Jour(1L, "Mardi");
-    public static final Jour MERCREDI = new Jour(1L, "Mercredi");
-    public static final Jour JEUDI = new Jour(1L, "Jeudi");
-    public static final Jour VENDREDI = new Jour(1L, "Vendredi");
-    public static final Jour SAMEDI = new Jour(1L, "Samedi");
-    public static final Jour DIMANCHE = new Jour(1L, "Dimanche");
+    public static final Jour MARDI = new Jour(2L, "Mardi");
+    public static final Jour MERCREDI = new Jour(3L, "Mercredi");
+    public static final Jour JEUDI = new Jour(4L, "Jeudi");
+    public static final Jour VENDREDI = new Jour(5L, "Vendredi");
+    public static final Jour SAMEDI = new Jour(6L, "Samedi");
+    public static final Jour DIMANCHE = new Jour(7L, "Dimanche");
 
     public static Jour getByIndex(int day) {
         assert day > 0;
