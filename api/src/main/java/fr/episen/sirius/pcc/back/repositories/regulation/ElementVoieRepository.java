@@ -15,6 +15,9 @@ public interface ElementVoieRepository extends JpaRepository<ElementVoie, Long> 
 
     // Trouve l'ElementVoie correspondant à une LigneStation
     List<ElementVoie> findByLigneStationId(Long ligneStationId);
+
+    // utilisé dans ItineraireService
+    Optional<ElementVoie> findFirstByLigneStationId(Long ligneStationId);
   
     @Query(value="SELECT e FROM ElementVoie e " +
             "WHERE e.id IN (SELECT e2.elementSuivant FROM ElementVoie e2 WHERE e2.ligneStation = :previousLigneStation) " +

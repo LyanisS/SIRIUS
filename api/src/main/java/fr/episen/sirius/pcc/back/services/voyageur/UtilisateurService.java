@@ -1,11 +1,16 @@
 package fr.episen.sirius.pcc.back.services.voyageur;
 
 import fr.episen.sirius.pcc.back.dto.voyageur.SessionUtilisateurDTO;
-import fr.episen.sirius.pcc.back.dto.voyageur.UtilisateurDTO;import fr.episen.sirius.pcc.back.models.voyageur.Utilisateur;import fr.episen.sirius.pcc.back.repositories.voyageur.UtilisateurRepository;
+import fr.episen.sirius.pcc.back.dto.voyageur.UtilisateurDTO;
+import fr.episen.sirius.pcc.back.models.voyageur.Utilisateur;
+import fr.episen.sirius.pcc.back.repositories.voyageur.UtilisateurRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;import org.springframework.stereotype.Service;
-import org.springframework.security.crypto.password.PasswordEncoder;import org.springframework.web.server.ResponseStatusException;import java.util.Optional;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.server.ResponseStatusException;
+import java.util.Optional;
 
 @Service
 @Slf4j
