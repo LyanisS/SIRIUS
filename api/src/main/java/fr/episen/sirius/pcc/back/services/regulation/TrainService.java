@@ -33,7 +33,18 @@ public class TrainService {
     private static final float VITESSE_MAX = 80.0f;
 
     public List<Train> getAllTrains() {
-        return trainRepository.findAll();
+        List<Train> trains = trainRepository.findAll();
+        List<Trajet> trajets = trajetRepository.findAll();
+        Map<Long, Boolean> sensTrain = new HashMap<>();
+        for (Trajet t : trajets) {
+            if (t.getTrain() != null && t.getSens() != null) {
+                sensTrain.put(t.getTrain().getId(), t.getSens());
+            }
+        }
+        for (Train train : trains) {
+            train.setSens(sensTrain.get(train.getId()));
+        }
+        return trains;
     }
 
     public Optional<Train> getTrainById(Long id) {
@@ -66,21 +77,23 @@ public class TrainService {
             }
 
             Ligne ligne = trajet.getLigne();
-            List<Horaire> horaires = horaireRepository.findAll();
-
-            // Filtrer les horaires pour ce trajet
-            List<Horaire> horairesTrajet = new ArrayList<>();
-            for (Horaire h : horaires) {
-                if (h != null && h.getTrajet() != null && h.getTrajet().getId().equals(trajet.getId())) {
-                    horairesTrajet.add(h);
-                }
-            }
+            List<Horaire> horairesTrajet = horaireRepository.findByTrajetOrderByDateArriveeTheorique(trajet.getId());
 
             if (horairesTrajet.isEmpty()) {
                 return;
             }
 
             Date maintenant = new Date();
+
+            // Déterminer le sens à partir de l'ordre des horaires
+            boolean sensActuel = true;
+            if (horairesTrajet.size() >= 2) {
+                int premierOrdre = horairesTrajet.get(0).getLigneStation().getOrdre();
+                int dernierOrdre = horairesTrajet.get(horairesTrajet.size() - 1).getLigneStation().getOrdre();
+                sensActuel = premierOrdre <= dernierOrdre;
+            }
+            trajet.setSens(sensActuel);
+            trajetRepository.save(trajet);
 
             // Trouver où est le train
             for (int i = 0; i < horairesTrajet.size(); i++) {
@@ -95,7 +108,7 @@ public class TrainService {
 
             // si Train à l'arrêt
             if (maintenant.compareTo(arrivee) >= 0 && maintenant.compareTo(depart) <= 0) {
-                afficherTrain(train, ligne, horaire, 0.0f, maintenant);
+                afficherTrain(train, ligne, horaire, 0.0f, maintenant, sensActuel);
                 return;
             }
 
@@ -109,7 +122,7 @@ public class TrainService {
                         if (maintenant.compareTo(depart) > 0 && maintenant.compareTo(prochaineArrivee) < 0) {
                             long duree = prochaineArrivee.getTime() - depart.getTime();
                             float vitesse = calculerVitesse(duree);
-                            afficherTrain(train, ligne, horaire, vitesse, maintenant);
+                            afficherTrain(train, ligne, horaire, vitesse, maintenant, sensActuel);
                             return;
                         }
                     }
@@ -120,7 +133,7 @@ public class TrainService {
         }
     }
 
-    private void afficherTrain(Train train, Ligne ligne, Horaire horaire, float vitesse, Date maintenant) {
+    private void afficherTrain(Train train, Ligne ligne, Horaire horaire, float vitesse, Date maintenant, boolean sens) {
         LigneStation ligneStation = horaire.getLigneStation();
         Station station = ligneStation.getStation();
 
@@ -140,9 +153,14 @@ public class TrainService {
             }
 
 
-       ElementVoie elementVoieChoisi = null;
+       ElementVoie elementVoieChoisi;
        if (!elementVoiesDisponibles.isEmpty()) {
            elementVoieChoisi = elementVoiesDisponibles.iterator().next();
+       } else if (!tousLesElementVoies.isEmpty()) {
+           elementVoieChoisi = tousLesElementVoies.get(0);
+       } else {
+           log.warn("Aucun élément de voie pour station {} (ligneStation {})", station.getNom(), ligneStation.getId());
+           return;
        }
 
        String typePeriode = getTypePeriode(ligne, maintenant);
