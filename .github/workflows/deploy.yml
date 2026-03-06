@@ -78,7 +78,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: front-build
-          path: "${{ github.workspace }}/frontend/build/"
+          path: "${{ github.workspace }}/frontend/dist/"
           if-no-files-found: 'error'
 
   deploy:
