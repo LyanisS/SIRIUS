@@ -49,7 +49,6 @@ function grouperParLigne(details) {
 
     return segments;
 }
-/
 function SegmentMetro({ segment, isLast }) {
 
     const [ouvert, setOuvert] = useState(false);
