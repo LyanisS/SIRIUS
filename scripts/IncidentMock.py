@@ -9,36 +9,33 @@ from datetime import datetime, timedelta
 # Configuration
 API_BASE_URL = "http://localhost:8080/api"
 
-MOTIFS_INCIDENTS = [
-    "Problème de signalisation",
-    "Conditions météorologiques difficiles",
-    "Perturbation du trafic",
-    "Incident voyageur",
-    "Obstacle sur la voie",
-    "Panne de courant",
-    "Défaillance du matériel roulant",
-    "Régulation du trafic",
-    "Problème de porte",
-    "Colis suspect signalé"
-]
-
-# Délais de résoluton du problème (entre 5 min et 2h)
-RESOLUTION_DELAY_RANGE = (5, 120)
+# Motif : délai de résolution (ex : (5, 120) => entre 5 min et 2h)
+MOTIFS_INCIDENTS = {
+    "Problème de signalisation": (10, 60),
+    "Conditions météorologiques difficiles": (5, 45),
+    "Perturbation du trafic": (5, 30),
+    "Incident voyageur": (3, 20),
+    "Obstacle sur la voie": (5, 40),
+    "Panne de courant": (10, 90),
+    "Défaillance du matériel roulant": (8, 60),
+    "Régulation du trafic": (2, 20),
+    "Problème de porte": (2, 15),
+    "Colis suspect signalé": (20, 90)
+}
 
 def get_active_trajets(api_base_url):
     """Récupère les trajets en cours via l'API"""
     try:
-        response = requests.get(f"{api_base_url}/trajets?statut=actif")
+        response = requests.get(f"{api_base_url}/trajets")
         response.raise_for_status()
         return response.json()
     except Exception as e:
         print(f"Erreur lors de la récupération des trajets: {e}")
         return []
 
-def create_incident(api_base_url, trajet_id, message):
+def create_incident(api_base_url, trajet_id, message, resolution_delay_minutes):
     """Créée un incident via l'API"""
 
-    resolution_delay_minutes = random.randint(*RESOLUTION_DELAY_RANGE)
     date_fin = datetime.now() + timedelta(minutes=resolution_delay_minutes)
 
     incident_data = {
@@ -79,9 +76,10 @@ def main():
     trajet_id = trajet['id']
     ligne_nom = trajet['ligne']['nom']
 
-    message = random.choice(MOTIFS_INCIDENTS)
+    message, resolution_delay_range = random.choice(list(MOTIFS_INCIDENTS.items()))
+    resolution_delay_minutes = random.randint(*resolution_delay_range)
 
-    incident = create_incident(args.api_url, trajet_id, message)
+    incident = create_incident(args.api_url, trajet_id, message, resolution_delay_minutes)
 
     if incident:
         print(f"Incident créé sur la {ligne_nom}")
