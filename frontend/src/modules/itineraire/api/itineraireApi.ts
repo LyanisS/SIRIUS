@@ -64,3 +64,25 @@ export async function enregistrerItineraireFavori(depart: number, arrivee: numbe
         throw error;
     }
 }
+
+/**
+ * Récuperer les itinéraires en favoris
+ */
+export async function getItinerairesFavoris(): Promise<ItineraireFavori[]> {
+    try {
+        const response = await fetch(
+            `/api/itineraires/favoris`,
+            {
+                headers: {
+                    Accept: "application/json",
+                    Authorization: `Bearer ${getToken()}`
+                }
+            }
+        );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error('Erreur recuperation itineraires favoris', error);
+        throw error;
+    }
+}
