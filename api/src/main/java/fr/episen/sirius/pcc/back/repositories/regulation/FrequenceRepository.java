@@ -31,11 +31,8 @@ public interface FrequenceRepository extends JpaRepository<Frequence, Long> {
             @Param("heure") Time heure
     );
 
-    @Query(value = "SELECT * FROM Frequence " +
-            "WHERE datedebut <= CURRENT_DATE " +
-            "AND datefin >= CURRENT_DATE " +
-            "AND heuredebut <= CURRENT_TIME + (:hours * INTERVAL '1 hour') " +
-            "AND heurefin >= CURRENT_TIME",
-            nativeQuery = true)
-    List<Frequence> findActiveFrequencesForHours(@Param("hours") int hours);
+    @Query("SELECT f FROM Frequence f " +
+            "WHERE f.dateDebut <= :dateSimulee " +
+            "AND f.dateFin >= :dateSimulee")
+    List<Frequence> findActiveFrequencesForHours(@Param("dateSimulee") Date dateSimulee);
 }

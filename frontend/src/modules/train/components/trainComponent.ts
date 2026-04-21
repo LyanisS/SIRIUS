@@ -14,6 +14,7 @@ export interface ElementVoie {
   ligneStation?: {
     id: number;
     ordre: number;
+    station: { id: number; nom: string };
     ligne: { id: number; nom: string };
   } | null;
 }
