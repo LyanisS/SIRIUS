@@ -54,10 +54,13 @@ public class TrainService {
     /**
      * Mise à jour toutes les 20 secondes
      */
-    @Scheduled(fixedRate = 20000)
+    private final Set<Long> evOccupesEnCours = new HashSet<>();
+
+    @Scheduled(fixedRate = 5000)
     @Transactional
     public void updateAllTrainPositions() {
         try {
+            evOccupesEnCours.clear(); // reset à chaque cycle
             List<Trajet> trajets = trajetRepository.findAll();
             for (Trajet trajet : trajets) {
                 if (trajet != null) {
@@ -65,7 +68,7 @@ public class TrainService {
                 }
             }
         } catch (Exception e) {
-            log.debug("Erreur mise à jour positions: {}", e.getMessage());
+            log.error("ERREUR scheduler: {}", e.getMessage(), e);
         }
     }
 
@@ -83,7 +86,7 @@ public class TrainService {
                 return;
             }
 
-            Date maintenant = new Date();
+            Date maintenant = SimulerHeureService.now();
 
             // Déterminer le sens à partir de l'ordre des horaires
             boolean sensActuel = true;
@@ -139,29 +142,22 @@ public class TrainService {
 
         List<ElementVoie> tousLesElementVoies = elementVoieRepository.findByLigneStationId(ligneStation.getId());
 
-       Set<ElementVoie> elementVoiesDisponibles = new HashSet<>(tousLesElementVoies);
-       List<Train> tousLesTrains = trainRepository.findAll();
-       
-       for (Train trainExistant : tousLesTrains) {
-                if (trainExistant == null || trainExistant.getId().equals(train.getId())) {
-                    continue;
-                }
+        // Filtre avec les EV déjà pris dans CE cycle
+        ElementVoie elementVoieChoisi = null;
 
-        if (trainExistant.getPosition() != null) {
-            elementVoiesDisponibles.removeIf(ev -> ev.getId().equals(trainExistant.getPosition().getId()));
-                }
+        for (ElementVoie ev : tousLesElementVoies) {
+            if (!evOccupesEnCours.contains(ev.getId())) {
+                elementVoieChoisi = ev;
+                break;
             }
+        }
 
+        if (elementVoieChoisi == null && !tousLesElementVoies.isEmpty()) {
+            elementVoieChoisi = tousLesElementVoies.get(0);
+        }
 
-       ElementVoie elementVoieChoisi;
-       if (!elementVoiesDisponibles.isEmpty()) {
-           elementVoieChoisi = elementVoiesDisponibles.iterator().next();
-       } else if (!tousLesElementVoies.isEmpty()) {
-           elementVoieChoisi = tousLesElementVoies.get(0);
-       } else {
-           log.warn("Aucun élément de voie pour station {} (ligneStation {})", station.getNom(), ligneStation.getId());
-           return;
-       }
+        // Marquer cet EV comme occupé
+        evOccupesEnCours.add(elementVoieChoisi.getId());
 
        String typePeriode = getTypePeriode(ligne, maintenant);
 
