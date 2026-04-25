@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Ligne, ConfigCanvas } from '../components/ligneComponent.ts';
 import { LigneStation } from '../../station/components/stationComponent.ts';
 import { Train } from '../../train/components/trainComponent.ts';
 import { ligneApi } from '../api/ligneApi';
 import { stationApi } from '../../station/api/stationApi';
 import { trainApi } from '../../train/api/trainApi';
+import { elementVoieApi } from '../../train/api/elementVoieApi';
+import { ElementVoie } from '../../train/components/trainComponent.ts';
 import VoiesComponent from '../components/voiesComponent.tsx';
 
 interface LigneViewProps {
@@ -24,10 +26,13 @@ export const LigneView: React.FC<LigneViewProps> = (props) => {
     const [stationsDirect, setStationsDirect] = useState<LigneStation[ ]>([ ]);
     const [stationsIndirect, setStationsIndirect] = useState<LigneStation[ ]>([ ]);
     const [trains, setTrains] = useState<Train[]>([]);
-    const [trainSelectionne, setTrainSelectionne] = useState<Train | null>(null);
+    const [elementVoies, setElementVoies] = useState<ElementVoie[]>([]);
+    const [incidents, setIncidents] = useState<any[]>([]);
     const [chargement, setChargement] = useState(true);
     const [erreur, setErreur] = useState<string | null>(null);
 
+    const elementVoiesRef = useRef<ElementVoie[]>([]);
+    const incidentsRef = useRef<any[]>([]);
     // Configuration du canvas
     const config: ConfigCanvas = {
         largeur: 1200,
@@ -42,38 +47,35 @@ export const LigneView: React.FC<LigneViewProps> = (props) => {
         ...configCanvas,
     };
 
-    useEffect(function() {
+    const filtrerTrainsParLigne = (trainsData: Train[], evs: ElementVoie[]): Train[] => {
+        const idsEvLigne = new Set(evs.map(ev => ev.id));
+        return trainsData.filter(train => train.position && idsEvLigne.has(train.position.id));
+    };
 
-        const charger = async function() {
+    useEffect(() => {
+        const charger = async () => {
             try {
                 setChargement(true);
-                const [ligneData, stationsD, stationsI] = await Promise.all([
+                const [ligneData, stationsD, stationsI, evs, trainsData, incidentsData] = await Promise.all([
                     ligneApi.obtenirLigneParId(ligneId),
                     stationApi.obtenirStationsDirect(ligneId),
                     stationApi.obtenirStationsIndirect(ligneId),
+                    elementVoieApi.obtenirEvParLigne(ligneId),
+                    trainApi.obtenirTousLesTrains(),
+                    fetch('/api/incidents').then(function(r) { return r.json(); })
                 ]);
 
                 setLigne(ligneData);
                 setStationsDirect(stationsD);
                 setStationsIndirect(stationsI);
-
-                const trainsData = await trainApi.obtenirTousLesTrains();
-
-                const trainsDeLaLigne = [];
-                for (let i = 0; i < trainsData.length; i++) {
-                    const train = trainsData[i];
-                    const trainAppartientALaLigne = train.position?.ligneStation?.ligne?.id === ligneId;
-
-                    if (trainAppartientALaLigne) {
-                        trainsDeLaLigne.push(train);
-                    }
-                }
-
-                setTrains(trainsDeLaLigne);
+                setElementVoies(evs);
+                elementVoiesRef.current = evs;
+                setIncidents(incidentsData);
+                incidentsRef.current = incidentsData;
+                setTrains(filtrerTrainsParLigne(trainsData, evs));
 
             } catch (err) {
-                const messageErreur = err instanceof Error ? err.message : 'Erreur réseau';
-                setErreur(messageErreur);
+                setErreur(err instanceof Error ? err.message : 'Erreur réseau');
             } finally {
                 setChargement(false);
             }
@@ -83,20 +85,21 @@ export const LigneView: React.FC<LigneViewProps> = (props) => {
 
         // Actualiser les trains toutes les 3 secondes
         const intervalle = setInterval(async function() {
-            const trainsData = await trainApi.obtenirTousLesTrains();
+            try {
+                const trainsData = await trainApi.obtenirTousLesTrains();
+                const incidentsResponse = await fetch('/api/incidents');
+                const incidentsData = await incidentsResponse.json();
 
-            // Filtrer ppar ligne
-            const trainsDeLaLigne = [];
-            for (let i = 0; i < trainsData.length; i++) {
-                const train = trainsData[i];
-                const trainAppartientALaLigne = train.position?.ligneStation?.ligne?.id === ligneId;
+                const filtres = filtrerTrainsParLigne(trainsData, elementVoiesRef.current);
+                incidentsRef.current = incidentsData;
+                setIncidents(incidentsData);
 
-                if (trainAppartientALaLigne) {
-                    trainsDeLaLigne.push(train);
+                if (filtres.length > 0) {
+                    setTrains(filtres);
                 }
+            } catch (e) {
+                console.error(e);
             }
-
-            setTrains(trainsDeLaLigne);
         }, 3000);
 
         return function() {
@@ -107,8 +110,6 @@ export const LigneView: React.FC<LigneViewProps> = (props) => {
 
 
     const gererTrainClique = function(train: Train) {
-        setTrainSelectionne(train);
-
         if (onTrainSelectionne) {
             onTrainSelectionne(train);
         }
@@ -123,22 +124,9 @@ export const LigneView: React.FC<LigneViewProps> = (props) => {
     }
 
     const nombreTotalStations = stationsDirect.length + stationsIndirect.length;
+    const trainsSensDirect = trains.filter(t => t.sens === true);
+    const trainsSensIndirect = trains.filter(t => t.sens !== true);
 
-    // Filtrer les trains par sens
-    const trainsSensDirect = [];
-    const trainsSensIndirect = [];
-
-    for (let i = 0; i < trains.length; i++) {
-        const train = trains[i];
-
-        if (train.sens === true) {
-            trainsSensDirect.push(train);
-        } else {
-            trainsSensIndirect.push(train);
-        }
-    }
-
-    // l'interface
     return (
         <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
 
@@ -148,7 +136,7 @@ export const LigneView: React.FC<LigneViewProps> = (props) => {
                     {ligne?.nom || 'Ligne'}
                 </h1>
                 <p style={{ margin: '5px 0', color: '#666' }}>
-                    {nombreTotalStations} stations • {trains.length} train(s)
+                    {nombreTotalStations} stations • {trains.length} train(s) • {incidents.filter(i => !i.dateFin || new Date(i.dateFin) > new Date()).length} incidents actifs
                 </p>
             </div>
 
@@ -159,9 +147,11 @@ export const LigneView: React.FC<LigneViewProps> = (props) => {
                     <VoiesComponent
                         stations={stationsDirect}
                         trains={trainsSensDirect}
+                        elementVoies={elementVoies}
                         direction="DIRECT"
                         config={config}
                         onTrainClique={gererTrainClique}
+                        incidents={incidents}
                     />
                 </div>
 
@@ -170,73 +160,14 @@ export const LigneView: React.FC<LigneViewProps> = (props) => {
                     <VoiesComponent
                         stations={stationsIndirect}
                         trains={trainsSensIndirect}
+                        elementVoies={elementVoies}
                         direction="INDIRECT"
                         config={config}
                         onTrainClique={gererTrainClique}
+                        incidents={incidents}
                     />
                 </div>
             </div>
-
-            {/* info sur train sélectionné */}
-            {trainSelectionne && (
-                <div style={{
-                    marginTop: '20px',
-                    padding: '15px',
-                    backgroundColor: '#F0F9FF',
-                    border: '2px solid #3B82F6',
-                    borderRadius: '8px',
-                }}>
-                    <h3 style={{ margin: '0 0 10px 0' }}>
-                         Train #{trainSelectionne.id}
-                    </h3>
-
-                    <p style={{ margin: '5px 0' }}>
-                        <strong>Vitesse:</strong> {trainSelectionne.vitesse.toFixed(1)} km/h
-                    </p>
-
-                    <p style={{ margin: '5px 0' }}>
-                        <strong>Direction:</strong> {' '}
-                        {(() => {
-                            const toutes = trainSelectionne.sens ? stationsDirect : stationsIndirect;
-                            const debut = toutes[0]?.station.nom ?? '?';
-                            const fin = toutes[toutes.length - 1]?.station.nom ?? '?';
-                            return `${debut} → ${fin}`;
-                        })()}
-                    </p>
-
-                    <p style={{ margin: '5px 0' }}>
-                        <strong>Station:</strong> {' '}
-                        {(() => {
-                            const ligneStationId = trainSelectionne.position?.ligneStation?.id;
-                            if (ligneStationId == null) return 'Inconnue';
-                            const trouvee = [...stationsDirect, ...stationsIndirect].find(ls => ls.id === ligneStationId);
-                            return trouvee?.station.nom ?? 'Inconnue';
-                        })()}
-                    </p>
-
-                    <p style={{ margin: '5px 0' }}>
-                        <strong>Statut:</strong> {' '}
-                        {trainSelectionne.vitesse > 0 ? ' En mouvement' : ' Arrêté'}
-                    </p>
-
-                    <button
-                        onClick={function() {
-                            setTrainSelectionne(null);
-                        }}
-                        style={{
-                            marginTop: '10px',
-                            padding: '8px 16px',
-                            backgroundColor: '#3B82F6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        Fermer
-                    </button>
-                </div>
-            )}
         </div>
     );
 };
