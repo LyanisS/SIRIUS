@@ -42,11 +42,14 @@ public class FrequenceService {
     public List<Frequence> generateTrajets(int hours) {
         log.info("--- Démarage génération de trajets ----");
 
+        Date heureSimuleeDebut = SimulerHeureService.now();
+
         Calendar dateDebut = Calendar.getInstance();
-        Calendar dateFin = Calendar.getInstance();
+        dateDebut.setTime(SimulerHeureService.now()); // heure simulée
+        Calendar dateFin = (Calendar) dateDebut.clone();
         dateFin.add(Calendar.HOUR_OF_DAY, hours);
 
-        List<Frequence> frequences = this.frequenceRepository.findActiveFrequencesForHours(hours);
+        List<Frequence> frequences = this.frequenceRepository.findActiveFrequencesForHours(SimulerHeureService.now());
         log.info("{} fréquences potentiellement applicables", frequences.size());
 
         if (frequences.isEmpty()) return frequences;
@@ -82,6 +85,8 @@ public class FrequenceService {
                 }
             }
         }
+        SimulerHeureService.reset(heureSimuleeDebut);
+        log.info("Simulation réinitialisée {}", heureSimuleeDebut);
 
         return frequences;
     }
