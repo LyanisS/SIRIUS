@@ -1,9 +1,5 @@
 # Projet SIRIUS - PCC : Poste de Commande Centralisé
-### Ce système consiste à développer une application
-### simulant un Poste de Commande Centralisé (PCC)
-### pour la gestion et l'automatisation d'une ligne de métro.
-### Elle permettra de surveiller le trafic en temps réel.
-
+ Ce système consiste à développer une application simulant un Poste de Commande Centralisé (PCC) pour la gestion et l'automatisation d'une ligne de métro.Elle permettra de surveiller le trafic en temps réel.
 
 ## Auteurs
 
@@ -22,14 +18,12 @@
 - WI : gèrer les itinèraires , fait par YASMINE :
   - calculer les itinèraires à partir d'un point de dèpart et d'un point d'arrivé .
   ## Livraison R3:
-  ### Rozalia :
+  ### Rozalia
+- Affichage des éléments de voie occupés par les trains, avec visualisation des trains circulant entre les stations
+- Utilisation de l'heure simulée pour la génération des trajets
+- Test unitaire validant la règle métier : un seul train autorisé par élément de voie
 
-    ### Affichage des éléments de voie occupés par les trains, avec visualisation des trains circulant entre les stations
-    ### Utilisation de l'heure simulée pour la génération des trajets
-    ### Test unitaire validant la règle métier : un seul train autorisé par élément de voie
-
-### Lyanis :
-
-   ### Sauvegarde et consultation des itinéraires favoris
-   ### Gestion de la déconnexion du compte utilisateur
-   ### Consultation de la liste des incidents
+### Lyanis
+- Sauvegarde et consultation des itinéraires favoris
+- Gestion de la déconnexion du compte utilisateur
+- Consultation de la liste des incidents
