@@ -343,7 +343,10 @@ export const VoiesComponent: React.FC<VoiesComponentProps> = (props) => {
                     fontSize: '13px',
                 }}>
                     <button
-                        onClick={function(e) { e.stopPropagation(); setPopup(null); }}
+                        onClick={function (e) {
+                            e.stopPropagation();
+                            setPopup(null);
+                        }}
                         style={{
                             position: 'absolute', top: 6, right: 8,
                             background: 'none', border: 'none',
@@ -353,20 +356,20 @@ export const VoiesComponent: React.FC<VoiesComponentProps> = (props) => {
                         x
                     </button>
 
-                    <div style={{ fontWeight: 'bold', marginBottom: 6 }}>
+                    <div style={{fontWeight: 'bold', marginBottom: 6}}>
                         Train {popup.train.id}
                         {incidentActif && (
-                            <span style={{ color: '#EF4444', marginLeft: 6 }}>
+                            <span style={{color: '#EF4444', marginLeft: 6}}>
                                 ! Incident
                             </span>
                         )}
                     </div>
 
                     <div>Vitesse : <strong>{popup.train.vitesse.toFixed(1)} km/h</strong></div>
-
+                    <div>Elément voie : <strong>{popup.train.position?.id}</strong></div>
                     <div>
                         Statut :
-                        <strong style={{ color: popup.train.vitesse > 0 ? '#10B981' : '#FFA500' }}>
+                        <strong style={{color: popup.train.vitesse > 0 ? '#10B981' : '#FFA500'}}>
                             {popup.train.vitesse > 0 ? ' En mouvement' : ' Arrete'}
                         </strong>
                     </div>
