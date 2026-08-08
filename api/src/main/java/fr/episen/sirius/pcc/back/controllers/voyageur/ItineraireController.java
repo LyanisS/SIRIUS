@@ -29,10 +29,10 @@ public class ItineraireController {
     @GetMapping("/calculer")
     public ResponseEntity<ItineraireDTO> calculer(
             @RequestParam Long depart,
-            @RequestParam Long arrivee) {
-        log.info("GET /api/itineraires/calculer?depart={}&arrivee={}", depart, arrivee);
+            @RequestParam Long arrivee,
+            @RequestParam(required = false) String heureDepart) {
 
-        return ResponseEntity.ok(itineraireService.calculerItineraire(depart, arrivee));
+        return ResponseEntity.ok(itineraireService.calculerItineraire(depart, arrivee, heureDepart));
     }
 
     @GetMapping("/favoris")
@@ -40,8 +40,8 @@ public class ItineraireController {
     public ResponseEntity<List<ItineraireFavoriDTO>> getAllItinerairesFavoris() {
         log.info("GET /api/itineraires/favoris");
         Utilisateur utilisateur = (Utilisateur) SecurityContextHolder.getContext()
-                                                                     .getAuthentication()
-                                                                     .getPrincipal();
+                .getAuthentication()
+                .getPrincipal();
 
         return ResponseEntity.ok(itineraireService.getAllItinerairesFavoris(utilisateur));
     }
@@ -51,8 +51,8 @@ public class ItineraireController {
     public ResponseEntity<ItineraireFavoriDTO> createItineraireFavori(@RequestBody CreateItineraireFavoriDTO dto) {
         log.info("POST /api/itineraires/favoris");
         Utilisateur utilisateur = (Utilisateur) SecurityContextHolder.getContext()
-                                                                     .getAuthentication()
-                                                                     .getPrincipal();
+                .getAuthentication()
+                .getPrincipal();
 
         Optional<ItineraireFavoriDTO> itineraire = itineraireService.createItineraireFavori(utilisateur, dto);
         return itineraire.map(ResponseEntity::ok)
