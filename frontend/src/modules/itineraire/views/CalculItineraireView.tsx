@@ -14,10 +14,18 @@ export const CLASSE_LIGNE: Record<string, string> = {
     "Ligne 8": "ligne-8"
 };
 
+function heureActuelle(): string {
+    const maintenant = new Date();
+    const heures = String(maintenant.getHours()).padStart(2, "0");
+    const minutes = String(maintenant.getMinutes()).padStart(2, "0");
+    return `${heures}:${minutes}`;
+}
+
 export default function CalculItineraireView() {
     const [stations, setStations] = useState<Station[]>([]);
     const [depart, setDepart] = useState<number|"">("");
     const [arrivee, setArrivee] = useState<number|"">("");
+    const [heureDepart, setHeureDepart] = useState<string>(heureActuelle());
     const [itineraire, setItineraire] = useState<Itineraire|null>(null);
     const [erreur, setErreur] = useState<string>("");
     const [chargement, setChargement] = useState<boolean>(false);
@@ -54,7 +62,7 @@ export default function CalculItineraireView() {
         setChargement(true);
         setItineraire(null);
 
-        calculerItineraire(depart, arrivee)
+        calculerItineraire(depart, arrivee, heureDepart)
             .then(res => setItineraire(res))
             .catch(() => setErreur("Erreur pendant le calcul"))
             .finally(() => setChargement(false));
@@ -91,7 +99,7 @@ export default function CalculItineraireView() {
         setChargement(true);
         setItineraire(null);
 
-        calculerItineraire(favori.stationDepart.id, favori.stationArrivee.id)
+        calculerItineraire(favori.stationDepart.id, favori.stationArrivee.id, heureDepart)
             .then(res => setItineraire(res))
             .catch(() => setErreur("Erreur pendant le calcul"))
             .finally(() => setChargement(false));
@@ -182,6 +190,14 @@ export default function CalculItineraireView() {
                 ))}
             </select>
 
+            <label>Heure de départ</label>
+
+            <input
+                type="time"
+                value={heureDepart}
+                onChange={e => setHeureDepart(e.target.value)}
+            />
+
             <button
                 className="btn-calculer"
                 onClick={lancerCalcul}
@@ -218,7 +234,31 @@ export default function CalculItineraireView() {
                                 🔄 {itineraire.nombreChangements} correspondance
                                 {itineraire.nombreChangements > 1 ? "s" : ""}
                             </span>
+                            <span>
+                                🕒 Départ {itineraire.heureDepart} → Arrivée estimée {itineraire.heureArrivee}
+                                {" "}({itineraire.dureeEstimeeMinutes} min)
+                            </span>
                         </div>
+
+                        {itineraire.incidentsImpactants.length > 0 && (
+                            <div className="perturbation">
+                                <div className="perturbation-titre">
+                                    ⚠️ Trajet perturbé (+{itineraire.retardMinutes} min)
+                                </div>
+                                <ul className="perturbation-liste">
+                                    {itineraire.incidentsImpactants.map(incident => (
+                                        <li key={incident.id}>
+                                            <span className="perturbation-ligne">{incident.ligneNom}</span>
+                                            {" — "}{incident.message}
+                                            {" "}
+                                            <span className="perturbation-duree">
+                                                (+{incident.dureeImpactMinutes} min{incident.enCours ? ", en cours" : ""})
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
 
                     </div>
 
