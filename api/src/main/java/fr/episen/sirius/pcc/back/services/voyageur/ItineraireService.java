@@ -151,7 +151,7 @@ public class ItineraireService {
     }
 
     // on garde le plus grand retard par ligne
-    private int calculerRetardTotal(List<IncidentImpactDTO> incidents) {
+     int calculerRetardTotal(List<IncidentImpactDTO> incidents) {
         Map<String, Integer> retardParLigne = new HashMap<>();
 
         for (IncidentImpactDTO incident : incidents) {
