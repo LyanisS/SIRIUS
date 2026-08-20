@@ -7,12 +7,25 @@ export interface EtapeItineraire {
     ligne: Ligne;
 }
 
+export interface IncidentImpact {
+    id: number;
+    message: string;
+    ligneNom: string;
+    dureeImpactMinutes: number;
+    enCours: boolean;
+}
+
 export interface Itineraire {
     stationDepart: Station;
     stationArrivee: Station;
     etapes: EtapeItineraire[];
     nombreChangements: number;
     nombreStations: number;
+    heureDepart: string;
+    heureArrivee: string;
+    dureeEstimeeMinutes: number;
+    retardMinutes: number;
+    incidentsImpactants: IncidentImpact[];
 }
 
 export interface ItineraireFavori {
@@ -26,10 +39,13 @@ export interface ItineraireFavori {
 /**
  * Calcule un intinéraire
  */
-export async function calculerItineraire(depart: number, arrivee: number): Promise<Itineraire> {
+export async function calculerItineraire(depart: number, arrivee: number, heureDepart?: string): Promise<Itineraire> {
     try {
+        const params = new URLSearchParams({ depart: String(depart), arrivee: String(arrivee) });
+        if (heureDepart) params.set("heureDepart", heureDepart);
+
         const response = await fetch(
-            `/api/itineraires/calculer?depart=${depart}&arrivee=${arrivee}&arrivee=${arrivee}`,
+            `/api/itineraires/calculer?${params.toString()}`,
             { headers: { Accept: "application/json" } }
         );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);

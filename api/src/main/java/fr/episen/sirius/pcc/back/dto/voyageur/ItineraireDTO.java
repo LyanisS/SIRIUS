@@ -13,4 +13,9 @@ public class ItineraireDTO {
     public List<EtapeItineraireDTO> etapes;
     public int nombreChangements;
     public int nombreStations;
+    public String heureDepart;
+    public String heureArrivee;
+    public int dureeEstimeeMinutes;
+    public int retardMinutes;
+    public List<IncidentImpactDTO> incidentsImpactants;
 }

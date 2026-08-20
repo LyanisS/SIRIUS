@@ -52,6 +52,23 @@ select:focus{
     border-color:#181f36;
 }
 
+input[type="time"]{
+    width:100%;
+    padding:10px 14px;
+    border:1.5px solid #dde1ec;
+    border-radius:10px;
+    background:#fff;
+    color:#181f36;
+    font-size:14px;
+    font-family: "DM Sans", sans-serif;
+    box-sizing:border-box;
+}
+
+input[type="time"]:focus{
+    outline:none;
+    border-color:#181f36;
+}
+
 .btn-calculer{
     width:100%;
     margin-top:10px;
@@ -106,6 +123,46 @@ select:focus{
     font-weight:600;
 }
 
+/* Bandeau incidents */
+.perturbation{
+    margin-top:12px;
+    background:#fff8e6;
+    border-left:4px solid #e5a100;
+    border-radius:8px;
+    padding:10px 12px;
+}
+
+.perturbation-titre{
+    font-weight:800;
+    font-size:13px;
+    color:#8a5a00;
+    margin-bottom:6px;
+}
+
+.perturbation-liste{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+
+.perturbation-liste li{
+    font-size:12.5px;
+    color:#5c4300;
+    line-height:1.4;
+}
+
+.perturbation-ligne{
+    font-weight:700;
+}
+
+.perturbation-duree{
+    color:#8a5a00;
+    font-weight:600;
+}
+
 /* Couleurs de les lignes */
 .ligne-1{ --c:#FFBE00; --cText:#181f36; }
 .ligne-8{ --c:#CE8BC2; --cText:#fff; }
@@ -117,13 +174,6 @@ select:focus{
 .tl-etape{
     display:flex;
     gap:14px;
-}
-
-.tl-track{
-    width:18px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
 }
 
 /* point qui represente une station */
@@ -150,15 +200,6 @@ select:focus{
     background: var(--c);
 }
 
-/* Ligne verticale entre les stationz */
-.tl-line{
-    width:4px;
-    flex:1;
-    min-height:22px;
-    border-radius:4px;
-    background:#d7dbe6;
-    margin:2px 0;
-}
 
 /* Ligne colorée selon ligne */
 .tl-line.ligne-1,
