@@ -1,5 +1,6 @@
 package fr.episen.sirius.pcc.back.services.voyageur;
-
+import fr.episen.sirius.pcc.back.models.regulation.*;
+import fr.episen.sirius.pcc.back.repositories.regulation.*;
 import fr.episen.sirius.pcc.back.services.voyageur.graph.Voisin;
 import fr.episen.sirius.pcc.back.services.voyageur.graph.StationDistance;
 import fr.episen.sirius.pcc.back.services.voyageur.graph.DijkstraResult;
@@ -8,11 +9,6 @@ import fr.episen.sirius.pcc.back.dto.voyageur.EtapeItineraireDTO;
 import fr.episen.sirius.pcc.back.dto.voyageur.IncidentImpactDTO;
 import fr.episen.sirius.pcc.back.dto.voyageur.ItineraireDTO;
 import fr.episen.sirius.pcc.back.dto.voyageur.ItineraireFavoriDTO;
-import fr.episen.sirius.pcc.back.models.regulation.ElementVoie;
-import fr.episen.sirius.pcc.back.models.regulation.Incident;
-import fr.episen.sirius.pcc.back.models.regulation.Ligne;
-import fr.episen.sirius.pcc.back.models.regulation.LigneStation;
-import fr.episen.sirius.pcc.back.models.regulation.Station;
 import fr.episen.sirius.pcc.back.models.voyageur.Itineraire;
 import fr.episen.sirius.pcc.back.models.voyageur.Utilisateur;
 import fr.episen.sirius.pcc.back.repositories.regulation.ElementVoieRepository;
@@ -23,6 +19,7 @@ import fr.episen.sirius.pcc.back.repositories.regulation.StationRepository;
 import fr.episen.sirius.pcc.back.repositories.voyageur.ItineraireRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
