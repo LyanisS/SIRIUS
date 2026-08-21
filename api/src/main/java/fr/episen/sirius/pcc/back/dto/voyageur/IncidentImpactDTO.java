@@ -4,9 +4,9 @@ import lombok.Data;
 
 @Data
 public class IncidentImpactDTO {
-    public Long id;
-    public String message;
-    public String ligneNom;
-    public int dureeImpactMinutes;
-    public boolean enCours;
+    private Long id;
+    private String message;
+    private String ligneNom;
+    private int dureeImpactMinutes;
+    private boolean enCours;
 }
