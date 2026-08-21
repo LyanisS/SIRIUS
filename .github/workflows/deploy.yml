@@ -5,7 +5,8 @@ on:
   push:
     branches:
       - main
-      - prod
+    tags:
+      - 'v*.*.*'
     paths:
       - 'api/**'
       - 'frontend/**'
@@ -41,13 +42,13 @@ jobs:
             set_prop $API_CONFIG_FILE spring.datasource.username "${{ vars.INTEG_DATASOURCE_USERNAME }}"
             set_prop $API_CONFIG_FILE spring.datasource.password "${{ secrets.INTEG_DATASOURCE_PASSWORD }}"
             set_prop $API_CONFIG_FILE jwt.secret "${{ secrets.INTEG_JWT_SECRET }}"
-          elif [[ "${GITHUB_REF}" == "refs/heads/prod" ]]; then
+          elif [[ "${GITHUB_REF}" == refs/tags/v*.*.* ]]; then
             set_prop $API_CONFIG_FILE spring.datasource.url "${{ vars.PROD_DATASOURCE_URL }}"
             set_prop $API_CONFIG_FILE spring.datasource.username "${{ vars.PROD_DATASOURCE_USERNAME }}"
             set_prop $API_CONFIG_FILE spring.datasource.password "${{ secrets.PROD_DATASOURCE_PASSWORD }}"
             set_prop $API_CONFIG_FILE jwt.secret "${{ secrets.PROD_JWT_SECRET }}"
           else
-            echo "Workflow is running on wrong branch. Exiting..."
+            echo "Workflow is running on wrong branch or tag. Exiting..."
             exit 1
           fi
       - name: Build api with Maven
@@ -105,7 +106,7 @@ jobs:
             echo "API_SSH_HOST=${{ vars.INTEG_API_SSH_HOST }}" >> $GITHUB_ENV
             echo "API_SSH_PORT=${{ vars.INTEG_API_SSH_PORT }}" >> $GITHUB_ENV
             echo "API_SSH_USER=${{ vars.INTEG_API_SSH_USER }}" >> $GITHUB_ENV
-          elif [[ "${GITHUB_REF}" == "refs/heads/prod" ]]; then
+          elif [[ "${GITHUB_REF}" == refs/tags/v*.*.* ]]; then
             echo "FRONT_SSH_HOST=${{ vars.PROD_FRONT_SSH_HOST }}" >> $GITHUB_ENV
             echo "FRONT_SSH_PORT=${{ vars.PROD_FRONT_SSH_PORT }}" >> $GITHUB_ENV
             echo "FRONT_SSH_USER=${{ vars.PROD_FRONT_SSH_USER }}" >> $GITHUB_ENV
@@ -114,7 +115,7 @@ jobs:
             echo "API_SSH_PORT=${{ vars.PROD_API_SSH_PORT }}" >> $GITHUB_ENV
             echo "API_SSH_USER=${{ vars.PROD_API_SSH_USER }}" >> $GITHUB_ENV
           else
-            echo "Workflow is running on wrong branch. Exiting..."
+            echo "Workflow is running on wrong branch or tag. Exiting..."
             exit 1
           fi
       - name: Deploy to frontend server
