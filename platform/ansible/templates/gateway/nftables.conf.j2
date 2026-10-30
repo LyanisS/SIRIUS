@@ -1,0 +1,92 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+define VLAN_INFRA    = 192.168.10.0/24
+define VLAN_K8S      = 192.168.20.0/24
+define VLAN_TRAINS   = 192.168.30.0/24
+define VLAN_DATA     = 192.168.40.0/24
+define DATA          = { 192.168.10.21, 192.168.10.22, 192.168.10.23 }
+define KEYCLOAK      = 192.168.10.11
+define GRAYLOG       = 192.168.10.12
+define VAULT         = 192.168.10.13
+define DATALAKE      = 192.168.40.11
+define DATAWAREHOUSE = 192.168.40.12
+define TRAEFIK       = 192.168.20.100
+
+table inet filter {
+  chain input {
+    type filter hook input priority filter; policy drop;
+    ct state established,related accept
+    iif lo accept
+    ip protocol { icmp, vrrp } accept
+    meta l4proto ipv6-icmp accept
+
+    # [11] SSH : accès administrateurs
+    iifname "wan" tcp dport 22 accept
+    iifname "infra" ip saddr { 192.168.10.1, 192.168.10.2, 192.168.10.3 } tcp dport 22 accept
+
+    # DNS
+    meta l4proto { tcp, udp } th dport 53 accept
+  }
+
+  chain forward {
+    type filter hook forward priority filter; policy drop;
+    ct state established,related accept
+
+    # [1] HTTPS depuis EPISEN vers Traefik (redirigé depuis la .37:443, voir nat)
+    iifname "wan" ip daddr $TRAEFIK tcp dport 443 accept
+
+    # [2] [3] HTTPS / OIDC vers Keycloak
+    ip saddr $VLAN_K8S ip daddr $KEYCLOAK tcp dport 8443 accept
+
+    # [4] HTTPS vers Graylog
+    ip saddr $VLAN_K8S ip daddr $GRAYLOG tcp dport 9000 accept
+
+    # [5] HTTPS vers Vault (Traefik)
+    ip saddr $VLAN_K8S ip daddr $VAULT tcp dport 8200 accept
+
+    # Vault Agent des VM vers Vault par Traefik (vault.pcc.internal), hors schéma
+    ip saddr { $VLAN_INFRA, $VLAN_DATA } ip daddr $TRAEFIK tcp dport 443 accept
+
+    # [6] pub / sub RabbitMQ : AMQPS, MQTTS (train-mock), interface web (Traefik)
+    ip saddr $VLAN_K8S ip daddr $DATA tcp dport { 5671, 8883, 15671 } accept
+
+    # [7] MongoDB
+    ip saddr $VLAN_K8S ip daddr $DATA tcp dport 27017 accept
+
+    # [8] Redis et Sentinel
+    ip saddr $VLAN_K8S ip daddr $DATA tcp dport { 6379, 26379 } accept
+
+    # [9] OpenTelemetry vers Graylog
+    ip saddr $VLAN_K8S ip daddr $GRAYLOG tcp dport 4317 accept
+
+    # [10] MQTTS des trains
+    ip saddr $VLAN_TRAINS ip daddr $DATA tcp dport 8883 accept
+
+    # [12] [15] S3 traefik vers le data lake
+    ip saddr $VLAN_K8S ip daddr $DATALAKE tcp dport 443 accept
+
+    # [13] [16] PostgreSQL vers le data warehouse
+    ip saddr $VLAN_K8S ip daddr $DATAWAREHOUSE tcp dport 5432 accept
+
+    # [14] Internet (NAT) : toutes les VM
+    oifname "wan" accept
+
+    limit rate 10/minute log prefix "pcc-refus "
+  }
+}
+
+table ip nat {
+  chain prerouting {
+    type nat hook prerouting priority dstnat;
+
+    # [1] HTTPS depuis l'exterieur : vers Traefik (Kubernetes)
+    iifname "wan" ip daddr 172.31.254.37 tcp dport 443 dnat to $TRAEFIK
+  }
+
+  chain postrouting {
+    type nat hook postrouting priority srcnat;
+    oifname "wan" masquerade
+  }
+}

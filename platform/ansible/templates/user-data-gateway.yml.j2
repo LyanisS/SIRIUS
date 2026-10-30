@@ -1,0 +1,82 @@
+{% set peer = groups.reseau | reject('eq', inventory_hostname) | map('extract', hostvars, 'ansible_host') | first %}
+#cloud-config
+preserve_hostname: false
+hostname: {{ inventory_hostname }}
+fqdn: {{ inventory_hostname }}.pcc.internal
+manage_etc_hosts: true
+{% include 'users.yml.j2' %}
+ssh_deletekeys: true
+ssh_genkeytypes: []
+ssh_keys:
+  ed25519_private: |
+    {{ lookup('file', gateway_host_key) | indent(4) }}
+  ed25519_public: {{ lookup('file', gateway_host_key ~ '.pub') }}
+packages: [keepalived, bind9, nftables]
+write_files:
+  - path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    content: "network: {config: disabled}\n"
+  - path: /etc/netplan/60-pcc.yaml
+    permissions: "0600"
+    content: |
+      network:
+        version: 2
+        ethernets:
+          wan: { match: { macaddress: "{{ macs['Network adapter 1'] }}" }, set-name: wan, dhcp4: true }
+          trunk: { match: { macaddress: "{{ macs['Network adapter 2'] }}" }, set-name: trunk }
+        # IP propre sur INFRA seulement ; sur les autres VLAN, seule la .1 virtuelle, posée par keepalived sur le maître
+        vlans:
+{% for v in vlans %}
+{% if v.key == net %}
+          {{ v.key }}: { id: {{ v.value.vlan }}, link: trunk, addresses: [{{ ansible_host }}/{{ v.value.prefix }}], nameservers: { addresses: [127.0.0.1], search: [~pcc.internal] } }
+{% else %}
+          {{ v.key }}: { id: {{ v.value.vlan }}, link: trunk }
+{% endif %}
+{% endfor %}
+  - path: /etc/ssh/sshd_config.d/10-pcc-host-key.conf
+    content: "HostKey /etc/ssh/ssh_host_ed25519_key\n"
+  - path: /etc/sysctl.d/90-pcc.conf
+    content: "net.ipv4.ip_forward = 1\n"
+  - path: /etc/keepalived/keepalived.conf
+    content: |
+      # VRRP en unicast sur INFRA : rien n'est émis sur EPISEN et aucune carte n'a besoin du mode promiscuité
+      vrrp_instance PCC {
+        state BACKUP
+        interface infra
+        virtual_router_id 10
+        priority {{ vrrp_priority }}
+        advert_int 1
+        unicast_src_ip {{ ansible_host }}
+        unicast_peer { {{ peer }} }
+        # Perd la main si le lien du WAN tombe
+        track_interface { wan }
+        virtual_ipaddress {
+{% for v in vlans %}
+          192.168.{{ v.value.vlan }}.1/{{ v.value.prefix }} dev {{ v.key }}
+{% endfor %}
+          {{ wan_vip }}/{{ wan_prefix }} dev wan
+        }
+      }
+{% for file in ['named.conf.options', 'named.conf.local'] %}
+  - path: /etc/bind/{{ file }}
+    owner: root:bind
+    defer: true
+    content: |
+      {{ lookup('template', 'gateway/' ~ file ~ '.j2') | indent(6) }}
+{% endfor %}
+{% for zone in ['pcc.inside.esipe-creteil.info', 'pcc.internal'] %}
+  - path: /etc/bind/zones/{{ zone }}.zone
+    owner: root:bind
+    defer: true
+    content: |
+      {{ lookup('template', 'dns/' ~ zone ~ '.zone.j2') | indent(6) }}
+{% endfor %}
+  - path: /etc/nftables.conf
+    permissions: "0755"
+    defer: true
+    content: |
+      {{ lookup('template', 'gateway/nftables.conf.j2') | indent(6) }}
+runcmd:
+  - rm -f /etc/netplan/50-cloud-init.yaml
+  - systemctl enable nftables
+# Redémarre pour appliquer netplan (renommage wan/trunk) et démarrer keepalived, BIND et nftables
+power_state: { mode: reboot }
