@@ -1,0 +1,7 @@
+users:
+{% for name, keys in accounts.items() %}
+  - name: {{ name }}
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys: {{ keys.splitlines() | to_json }}
+{% endfor %}

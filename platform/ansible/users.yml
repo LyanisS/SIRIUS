@@ -1,0 +1,38 @@
+- name: Comptes
+  hosts: all
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Comptes
+      ansible.builtin.user:
+        name: "{{ item }}"
+        shell: /bin/bash
+      loop: "{{ accounts.keys() }}"
+
+    - name: Dossier .ssh
+      ansible.builtin.file:
+        path: "/home/{{ item }}/.ssh"
+        state: directory
+        owner: "{{ item }}"
+        group: "{{ item }}"
+        mode: "0700"
+      loop: "{{ accounts.keys() }}"
+
+    - name: Clés SSH (remplacent les précédentes)
+      ansible.builtin.copy:
+        content: "{{ item.value }}\n"
+        dest: "/home/{{ item.key }}/.ssh/authorized_keys"
+        owner: "{{ item.key }}"
+        group: "{{ item.key }}"
+        mode: "0600"
+      loop: "{{ accounts | dict2items }}"
+      loop_control: { label: "{{ item.key }}" }
+
+    - name: sudo sans mot de passe
+      ansible.builtin.copy:
+        content: "{{ item }} ALL=(ALL) NOPASSWD:ALL\n"
+        dest: "/etc/sudoers.d/pcc-{{ item }}"
+        mode: "0440"
+        validate: visudo -cf %s
+      loop: "{{ accounts.keys() }}"
+
