@@ -1,0 +1,33 @@
+datacenter: ESIPE-Creteil
+esxi_host: esx4.inside.esipe-creteil.info
+datastore: DS5 - Ing3
+pcc_folder: "/ESIPE-Creteil/vm/Etudiants/SIRIUS/Promo 2024-2027/🚇 PCC/ING3"
+ubuntu_template: pcc-template-ubuntu-26.04-cloud
+episen_network: LAN
+
+vswitch: vSwitch-SIRIUS-PCC
+networks:
+  infra:  { portgroup: "LAN SIRIUS PCC INFRA sur ESX4",  vlan: 10, prefix: 24 }
+  k8s:    { portgroup: "LAN SIRIUS PCC K8S sur ESX4",    vlan: 20, prefix: 24 }
+  trains: { portgroup: "LAN SIRIUS PCC TRAINS sur ESX4", vlan: 30, prefix: 24 }
+  data:   { portgroup: "LAN SIRIUS PCC DATA sur ESX4",   vlan: 40, prefix: 24 }
+  trunk:  { portgroup: "LAN SIRIUS PCC TRUNK sur ESX4",  vlan: 4095 }
+
+wan_vip: 172.31.254.37
+wan_prefix: 21
+
+ansible_user: deploy
+deploy_key: "{{ ansible_config_file | dirname }}/keys/deploy"
+
+gateway_host_key: "{{ ansible_config_file | dirname }}/keys/gateway_host_ed25519"
+ansible_ssh_private_key_file: "{{ deploy_key }}"
+
+accounts:
+  deploy: "{{ lookup('file', deploy_key ~ '.pub') }}"
+  lyanis: "{{ lookup('url', 'https://github.com/LyanisS.keys', split_lines=false) }}"
+  rozalia: "{{ lookup('url', 'https://github.com/GHOMRAS-Rosalia.keys', split_lines=false) }}"
+
+ansible_ssh_common_args: >-
+  -o ServerAliveInterval=5 -o ServerAliveCountMax=3
+  -o IdentitiesOnly=yes
+  -o ProxyCommand="ssh -W %h:%p -o ServerAliveInterval=5 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPersist=60s -o ControlPath=~/.ansible/cp/rebond-%%C -i {{ ansible_ssh_private_key_file }} {{ ansible_user }}@{{ wan_vip }}"
