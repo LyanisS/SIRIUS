@@ -1,0 +1,44 @@
+{% set gateway = ansible_host | regex_replace('\\.\\d+$', '.1') %}
+#cloud-config
+preserve_hostname: false
+hostname: {{ inventory_hostname }}
+fqdn: {{ inventory_hostname }}.pcc.internal
+manage_etc_hosts: true
+{% include 'users.yml.j2' %}
+ca_certs:
+  trusted:
+    - |
+      {{ lookup('file', ansible_config_file | dirname ~ '/../vault/pcc-ca.crt') | indent(6) }}
+{% if net in ['infra', 'data'] %}
+apt:
+  sources:
+    hashicorp:
+      source: "deb [signed-by=$KEY_FILE] https://apt.releases.hashicorp.com $RELEASE main"
+      key: |
+        {{ lookup('url', 'https://apt.releases.hashicorp.com/gpg', split_lines=false) | indent(8) }}
+{% endif %}
+{% if data_disk is defined %}
+fs_setup: [{ label: data, filesystem: ext4, device: /dev/sdb, partition: none }]
+mounts: [[LABEL=data, /data, ext4, "defaults,nofail", "0", "2"]]
+{% endif %}
+write_files:
+  - path: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    content: "network: {config: disabled}\n"
+  - path: /etc/netplan/60-pcc.yaml
+    permissions: "0600"
+    content: |
+      network:
+        version: 2
+        ethernets:
+          nic0:
+            match: { driver: vmxnet3 }
+            addresses: [{{ ansible_host }}/{{ networks[net].prefix }}]
+            routes: [{ to: default, via: {{ gateway }} }]
+            nameservers: { addresses: [{{ gateway }}], search: [pcc.internal] }
+runcmd:
+  - rm -f /etc/netplan/50-cloud-init.yaml
+  - netplan apply
+{% if net in ['infra', 'data'] %}
+  - apt-get -o Acquire::Retries=10 update
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y vault
+{% endif %}
