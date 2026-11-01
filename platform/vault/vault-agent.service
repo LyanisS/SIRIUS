@@ -1,0 +1,15 @@
+# /etc/systemd/system/vault-agent.service
+[Unit]
+Description=Vault Agent (certificat TLS de la VM)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Environment=VAULT_ADDR=https://vault.pcc.internal
+Environment=VAULT_CACERT=/usr/local/share/ca-certificates/pcc-ca.crt
+ExecStart=/usr/bin/vault agent -config=/etc/vault-agent/agent.hcl
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
