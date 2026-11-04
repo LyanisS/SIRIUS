@@ -1,0 +1,78 @@
+# Services publiés par Traefik sur https://<nom>.pcc.inside.esipe-creteil.info, vers les VM INFRA en HTTPS
+# (certificats des services vérifiés avec la CA PCC, secret pcc-ca).
+
+# Vérification des certificats des services
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: pcc-internal
+  namespace: traefik
+spec:
+  rootCAs:
+    - secret: pcc-ca
+---
+# Services hors du cluster, par leur nom DNS interne (porté par leur certificat)
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault
+  namespace: traefik
+spec:
+  type: ExternalName
+  externalName: vault01.pcc.internal
+  ports: [{ port: 8200 }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: graylog
+  namespace: traefik
+spec:
+  type: ExternalName
+  externalName: graylog01.pcc.internal
+  ports: [{ port: 9000 }]
+---
+# Interface web RabbitMQ : data.pcc.internal désigne tous les nœuds data
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: traefik
+spec:
+  type: ExternalName
+  externalName: data.pcc.internal
+  ports: [{ port: 15671 }]
+---
+# Graylog construit les liens de son interface à partir de cette adresse publique
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: graylog-url
+  namespace: traefik
+spec:
+  headers:
+    customRequestHeaders:
+      X-Graylog-Server-URL: https://graylog.pcc.inside.esipe-creteil.info/
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: services
+  namespace: traefik
+spec:
+  entryPoints: [websecure]
+  routes:
+    # vault.pcc.internal : Vault Agent des VM (Vault lit leur IP dans X-Forwarded-For, voir platform/vault/vault.hcl)
+    - match: Host(`vault.pcc.inside.esipe-creteil.info`) || Host(`vault.pcc.internal`)
+      services:
+        - { name: vault, port: 8200, scheme: https, serversTransport: pcc-internal }
+    - match: Host(`graylog.pcc.inside.esipe-creteil.info`)
+      middlewares:
+        - name: graylog-url
+      services:
+        - { name: graylog, port: 9000, scheme: https, serversTransport: pcc-internal }
+    - match: Host(`rabbitmq.pcc.inside.esipe-creteil.info`)
+      services:
+        - { name: rabbitmq, port: 15671, scheme: https, serversTransport: pcc-internal }
+  # Certificat par défaut (TLSStore), voir traefik-values.yaml
+  tls: {}
