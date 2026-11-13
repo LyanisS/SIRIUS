@@ -1,0 +1,42 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: datalake
+  namespace: traefik
+spec:
+  secretName: datalake-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: vault
+  commonName: datalake.pcc.internal
+  dnsNames:
+    - datalake.pcc.internal
+    - "*.datalake.pcc.internal"
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datalake
+  namespace: traefik
+spec:
+  type: ExternalName
+  externalName: datalake01.pcc.internal
+  ports: [{ port: 443 }]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: datalake
+  namespace: traefik
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`datalake.pcc.internal`) || HostRegexp(`^[a-z0-9][a-z0-9.-]*\.datalake\.pcc\.internal$`)
+      services:
+        - { name: datalake, port: 443, scheme: https, serversTransport: pcc-internal }
+  tls:
+    secretName: datalake-tls
