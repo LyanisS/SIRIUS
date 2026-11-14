@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: raw-archiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: raw-archiver }
+  template:
+    metadata:
+      labels: { app: raw-archiver }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 65534, runAsGroup: 65534 }
+      containers:
+        - name: raw-archiver
+          image: ghcr.io/lyaniss/sirius/raw-archiver
+          env:
+            - { name: AMQP_HOST, value: data.pcc.internal }
+            - { name: AMQP_USER, value: raw-archiver }
+            - { name: S3_ENDPOINT, value: "https://datalake.pcc.internal" }
+          envFrom: [{ secretRef: { name: raw-archiver } }]
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 256Mi }
+          securityContext: { readOnlyRootFilesystem: true, allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+          volumeMounts:
+            - { name: ca, mountPath: /etc/pcc-ca }
+      volumes:
+        - { name: ca, configMap: { name: pcc-ca } }
