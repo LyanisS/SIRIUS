@@ -1,0 +1,19 @@
+# /etc/garage.toml : remplacer __RPC_SECRET__ et __ADMIN_TOKEN__
+metadata_dir = "/data/garage/meta"
+data_dir     = "/data/garage/data"
+db_engine    = "lmdb"
+metadata_auto_snapshot_interval = "6h"
+
+replication_factor = 1
+
+rpc_bind_addr = "127.0.0.1:3901"
+rpc_secret    = "__RPC_SECRET__"
+
+[s3_api]
+s3_region     = "garage"
+api_bind_addr = "127.0.0.1:3900"
+root_domain   = ".datalake.pcc.internal"
+
+[admin]
+api_bind_addr = "127.0.0.1:3903"
+admin_token   = "__ADMIN_TOKEN__"

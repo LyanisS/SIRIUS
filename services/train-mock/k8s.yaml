@@ -1,0 +1,55 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: train-mock
+spec:
+  secretName: train-mock-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: vault-mqtt
+  commonName: train-mock
+  usages: [client auth, digital signature, key encipherment]
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: train-mock
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: train-mock }
+  template:
+    metadata:
+      labels: { app: train-mock }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 65534, runAsGroup: 65534, fsGroup: 65534 }
+      containers:
+        - name: train-mock
+          image: ghcr.io/lyaniss/sirius/train-mock
+          env:
+            - { name: MQTT_HOST, value: data.pcc.internal }
+            - { name: MQTT_PORT, value: "8883" }
+            - { name: MQTT_CA_CERT, value: /etc/pcc-ca/ca.crt }
+            - { name: MQTT_CLIENT_CERT, value: /etc/train-mock-tls/tls.crt }
+            - { name: MQTT_CLIENT_KEY, value: /etc/train-mock-tls/tls.key }
+            - { name: NB_TRAINS, value: "6" }
+            - { name: PERIODE_S, value: "1" }
+            - { name: ACCELERATION, value: "1" }
+            - { name: INCIDENTS_PAR_HEURE, value: "2" }
+          resources:
+            requests: { cpu: 50m, memory: 48Mi }
+            limits: { memory: 128Mi }
+          securityContext: { readOnlyRootFilesystem: true, allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+          volumeMounts:
+            - { name: ca, mountPath: /etc/pcc-ca }
+            - { name: tls, mountPath: /etc/train-mock-tls }
+      volumes:
+        - { name: ca, configMap: { name: pcc-ca } }
+        - { name: tls, secret: { secretName: train-mock-tls, defaultMode: 0440 } }

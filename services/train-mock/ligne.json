@@ -1,0 +1,21 @@
+{
+  "id": "L1",
+  "nom": "Ligne 1",
+  "vitesseMaxKmh": 80,
+  "accelerationMs2": 1.0,
+  "freinageMs2": 1.0,
+  "arretQuaiSec": [20, 40],
+  "arretTerminusSec": 90,
+  "stations": [
+    { "id": "S01", "nom": "Gare du Nord",      "pk": 0 },
+    { "id": "S02", "nom": "République",        "pk": 850 },
+    { "id": "S03", "nom": "Hôtel de Ville",    "pk": 1700 },
+    { "id": "S04", "nom": "Châtelet",          "pk": 2400 },
+    { "id": "S05", "nom": "Bastille",          "pk": 3350 },
+    { "id": "S06", "nom": "Gare de Lyon",      "pk": 4300 },
+    { "id": "S07", "nom": "Bercy",             "pk": 5150 },
+    { "id": "S08", "nom": "Cour Saint-Émilion","pk": 5900 },
+    { "id": "S09", "nom": "Bibliothèque",      "pk": 6800 },
+    { "id": "S10", "nom": "Porte de France",   "pk": 7900 }
+  ]
+}

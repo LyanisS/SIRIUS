@@ -1,0 +1,20 @@
+# /etc/systemd/system/garage.service
+[Unit]
+Description=Garage (stockage objet S3)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=garage
+Group=garage
+Environment=RUST_LOG=garage=info
+ExecStart=/usr/local/bin/garage server
+LimitNOFILE=42000
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/data/garage
+NoNewPrivileges=true
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
