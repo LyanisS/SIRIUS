@@ -1,0 +1,34 @@
+- name: DNS
+  hosts: reseau
+  gather_facts: false
+  become: true
+  serial: 1
+  tasks:
+    - name: Configuration BIND
+      ansible.builtin.template:
+        src: "gateway/{{ item }}.j2"
+        dest: "/etc/bind/{{ item }}"
+        owner: root
+        group: bind
+        mode: "0644"
+      loop: [named.conf.options, named.conf.local]
+      notify: Recharger BIND
+
+    - name: Zones
+      ansible.builtin.template:
+        src: "dns/{{ item }}.zone.j2"
+        dest: "/etc/bind/zones/{{ item }}.zone"
+        owner: root
+        group: bind
+        mode: "0644"
+        validate: "named-checkzone {{ item }} %s"
+      loop: [pcc.inside.esipe-creteil.info, pcc.internal]
+      notify: Recharger BIND
+
+    - name: Vérifier la configuration BIND
+      ansible.builtin.command: named-checkconf -z
+      changed_when: false
+
+  handlers:
+    - name: Recharger BIND
+      ansible.builtin.command: rndc reload

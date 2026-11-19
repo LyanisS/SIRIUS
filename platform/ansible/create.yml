@@ -1,0 +1,86 @@
+- name: Dossiers et réseau
+  hosts: localhost
+  gather_facts: false
+  environment: "{{ vcenter_env }}"
+  tasks:
+    - name: Dossiers des VM
+      vmware.vmware.folder:
+        absolute_path: "{{ pcc_folder }}/{{ item }}"
+      loop: "{{ groups.all | map('extract', hostvars, 'vm_folder') | unique }}"
+
+    - name: vSwitch
+      community.vmware.vmware_vswitch:
+        esxi_hostname: "{{ esxi_host }}"
+        switch: "{{ vswitch }}"
+        nics: []
+        security: { promiscuous_mode: false, mac_changes: false, forged_transmits: false }
+
+    - name: Port groups VLAN
+      community.vmware.vmware_portgroup:
+        hosts: ["{{ esxi_host }}"]
+        switch: "{{ vswitch }}"
+        portgroup: "{{ item.value.portgroup }}"
+        vlan_id: "{{ item.value.vlan }}"
+      loop: "{{ networks | dict2items }}"
+
+- name: VMs Ubuntu
+  hosts: all
+  gather_facts: false
+  environment: "{{ vcenter_env }}"
+  module_defaults:
+    group/community.vmware.vmware:
+      datacenter: "{{ datacenter }}"
+      folder: "{{ pcc_folder }}/{{ vm_folder }}"
+      name: "{{ display_name }}"
+  tasks:
+    - name: Clés SSH du compte deploy et d'hôte des passerelles (si absentes)
+      community.crypto.openssh_keypair:
+        path: "{{ item }}"
+        type: ed25519
+      loop: ["{{ deploy_key }}", "{{ gateway_host_key }}"]
+      run_once: true
+      delegate_to: localhost
+
+    - name: Cloner (éteinte)
+      community.vmware.vmware_guest:
+        template: "{{ ubuntu_template }}"
+        esxi_hostname: "{{ esxi_host }}"
+        datastore: "{{ datastore }}"
+        hardware: { num_cpus: "{{ cpu }}", memory_mb: "{{ mem }}" }
+        disk: "{{ ([{'size_gb': disk}] + ([{'size_gb': data_disk}] if data_disk is defined else [])) | map('combine', {'type': 'thin', 'datastore': datastore}) | list }}"
+        state: present
+      register: vm
+      delegate_to: localhost
+
+    - name: Cartes réseau
+      community.vmware.vmware_guest_network:
+        label: "Network adapter {{ idx + 1 }}"
+        network_name: "{{ item }}"
+        device_type: vmxnet3
+      loop: "{{ nics | default([networks[net].portgroup]) }}"
+      loop_control: { index_var: idx }
+      delegate_to: localhost
+
+    - name: Lire les MAC
+      community.vmware.vmware_guest_network:
+        gather_network_info: true
+      register: nets
+      delegate_to: localhost
+
+    - name: cloud-init (propriétés vApp)
+      community.vmware.vmware_guest:
+        vapp_properties:
+          - { id: instance-id, value: "{{ inventory_hostname }}" }
+          - { id: hostname, value: "{{ inventory_hostname }}" }
+          - { id: user-data, value: "{{ lookup('template', user_data | default('user-data.yml.j2')) | b64encode }}" }
+        state: present
+      vars:
+        macs: "{{ nets.network_info | items2dict(key_name='label', value_name='mac_address') }}"
+      delegate_to: localhost
+
+    - name: Démarrer
+      vmware.vmware.vm_powerstate:
+        datacenter: "{{ datacenter }}"
+        moid: "{{ vm.instance.moid }}"
+        state: powered-on
+      delegate_to: localhost

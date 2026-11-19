@@ -1,0 +1,34 @@
+# Valeurs du chart Helm traefik/traefik (v42, Traefik 3.7)
+deployment:
+  replicas: 2
+
+ports:
+  # HTTPS seulement : la passerelle ne redirige que le port 443
+  web:
+    expose:
+      default: false
+  websecure:
+    exposedPort: 443
+
+# Service de type LoadBalancer (valeur par défaut du chart) : adresse attribuée par MetalLB
+service:
+  annotations:
+    # Adresse fixe : cible de la redirection 443 de la passerelle (platform/ansible/templates/gateway/nftables.conf.j2)
+    metallb.io/loadBalancerIPs: 192.168.20.100
+  spec:
+    # Garde l'IP du client (pas de NAT vers un autre nœud) : Traefik la transmet dans X-Forwarded-For,
+    # Vault s'en sert pour vérifier l'IP liée à l'identifiant de chaque Vault Agent
+    externalTrafficPolicy: Local
+
+providers:
+  kubernetesCRD:
+    # Les services publiés sont hors du cluster (VM INFRA) : services Kubernetes de type ExternalName
+    allowExternalNameServices: true
+  kubernetesIngress:
+    enabled: false
+
+# Certificat par défaut : noms des services publiés, émis par Vault via cert-manager (certificate.yaml)
+tlsStore:
+  default:
+    defaultCertificate:
+      secretName: pcc-public-tls

@@ -1,0 +1,11 @@
+zone "pcc.inside.esipe-creteil.info" {
+  type primary;
+  file "/etc/bind/zones/pcc.inside.esipe-creteil.info.zone";
+};
+
+// Interne : interrogeable seulement depuis les VLAN
+zone "pcc.internal" {
+  type primary;
+  file "/etc/bind/zones/pcc.internal.zone";
+  allow-query { vlans; };
+};

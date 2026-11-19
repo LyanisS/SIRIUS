@@ -1,0 +1,30 @@
+; Serial fixe : chaque passerelle est primaire (pas de transfert de zone), BIND recharge le fichier quand il change
+$TTL 300
+@       IN SOA  ns.pcc.internal. lyanis\.souidi.etu.u-pec.fr. ( 2 3600 600 86400 300 )
+@       IN NS   ns
+ns      IN A    192.168.10.1
+
+; VM de l'inventaire
+{% for h in groups.all %}
+{{ h }} IN A {{ hostvars[h].ansible_host }}
+{% endfor %}
+
+; Kubernetes : adresse virtuelle de l'API (kube-vip) et de Traefik (MetalLB)
+k8s            IN A 192.168.20.10
+traefik.k8s    IN A 192.168.20.100
+; Vault par Traefik : point d'accès des Vault Agent des VM (sauf vault01)
+vault          IN A 192.168.20.100
+
+; Data lake S3 par Traefik : datalake.pcc.internal et un sous-domaine par bucket (exception : nom générique)
+datalake       IN A 192.168.20.100
+*.datalake     IN A 192.168.20.100
+
+; Nœuds data (VM data01, data02…) sous un seul nom, TTL court pour suivre vite un ajout ou un retrait de nœud.
+; MongoDB : les SRV listent les membres pour « mongodb+srv://…@data.pcc.internal/ », le TXT donne les options du replica set
+{% for h in groups.all | select('match', '^data[0-9]+$') %}
+data           60 IN A {{ hostvars[h].ansible_host }}
+_mongodb._tcp.data 60 IN SRV 0 0 27017 {{ h }}.pcc.internal.
+{% endfor %}
+data           60 IN TXT "replicaSet=rs0&authSource=admin"
+
+; Enregistrements ajoutés à la main

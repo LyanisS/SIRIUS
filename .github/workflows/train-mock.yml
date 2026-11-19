@@ -1,0 +1,16 @@
+name: train-mock
+
+on:
+  push:
+    branches: [main]
+    paths: ["services/train-mock/**"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/service.yml
+    with:
+      service: train-mock
+    permissions:
+      contents: read
+      packages: write

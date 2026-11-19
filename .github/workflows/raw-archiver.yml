@@ -1,0 +1,16 @@
+name: raw-archiver
+
+on:
+  push:
+    branches: [main]
+    paths: ["services/raw-archiver/**"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/service.yml
+    with:
+      service: raw-archiver
+    permissions:
+      contents: read
+      packages: write

@@ -1,0 +1,45 @@
+name: service
+
+on:
+  workflow_call:
+    inputs:
+      service: { type: string, required: true }
+
+jobs:
+  deploy:
+    runs-on: pcc
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}/${{ inputs.service }}
+          tags: type=sha
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: services/${{ inputs.service }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - uses: azure/setup-kubectl@v5
+        with:
+          version: v1.37.2
+
+      - uses: azure/k8s-deploy@v7
+        with:
+          namespace: ${{ inputs.service }}
+          manifests: services/${{ inputs.service }}/k8s.yaml
+          images: ${{ steps.meta.outputs.tags }}
+          annotate-namespace: false
+          pull-images: false

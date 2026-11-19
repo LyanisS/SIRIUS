@@ -1,0 +1,4 @@
+inventory/group_vars/all/vcenter.yml
+collections/
+keys/
+.venv/

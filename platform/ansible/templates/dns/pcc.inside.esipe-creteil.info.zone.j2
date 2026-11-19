@@ -1,0 +1,11 @@
+; Zone visible depuis EPISEN, servie par les passerelles sur la .37 (172.31.254.37) ; serial fixe : voir pcc.internal.
+; Délégation dans inside.esipe-creteil.info : « pcc IN NS sirius-25-26-pcc » et « sirius-25-26-pcc IN A 172.31.254.37 »
+; Contact (SOA) : lyanis.souidi@etu.u-pec.fr, le « . » avant « @ » échappé
+$TTL 300
+@        IN SOA  sirius-25-26-pcc.inside.esipe-creteil.info. lyanis\.souidi.etu.u-pec.fr. ( 2 3600 600 86400 300 )
+@        IN NS   sirius-25-26-pcc.inside.esipe-creteil.info.
+@        IN A    172.31.254.37
+; Services publiés par Traefik, tous sur la .37 (voir platform/kubernetes/ingress)
+vault    IN A    172.31.254.37
+graylog  IN A    172.31.254.37
+rabbitmq IN A    172.31.254.37

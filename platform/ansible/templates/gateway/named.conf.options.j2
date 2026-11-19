@@ -1,0 +1,20 @@
+// VLAN internes (192.168.<VLAN>.0/24)
+acl vlans {
+  192.168.0.0/16;
+  localhost;
+};
+
+options {
+  directory "/var/cache/bind";
+  listen-on { any; };
+  listen-on-v6 { none; };
+  // Résolveur récursif pour les VLAN seulement ; depuis EPISEN, uniquement les zones publiques
+  recursion yes;
+  allow-recursion { vlans; };
+  allow-query { any; };
+  allow-transfer { none; };
+  dnssec-validation auto;
+  // Hors de nos zones : DNS d'EPISEN reçu par DHCP, via systemd-resolved (résout aussi inside.esipe-creteil.info)
+  forwarders { 127.0.0.53; };
+  forward only;
+};

@@ -1,0 +1,12 @@
+githubConfigUrl: https://github.com/LyanisS/SIRIUS
+githubConfigSecret: github-pat
+minRunners: 0
+maxRunners: 3
+containerMode:
+  type: dind
+template:
+  spec:
+    serviceAccountName: ci-deployer
+controllerServiceAccount:
+  namespace: arc-systems
+  name: arc-gha-rs-controller

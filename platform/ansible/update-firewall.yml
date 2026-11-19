@@ -1,0 +1,17 @@
+- name: Pare-feu
+  hosts: reseau
+  gather_facts: false
+  become: true
+  serial: 1
+  tasks:
+    - name: Règles nftables
+      ansible.builtin.template:
+        src: gateway/nftables.conf.j2
+        dest: /etc/nftables.conf
+        mode: "0755"
+        validate: "nft -c -f %s"
+      notify: Recharger nftables
+
+  handlers:
+    - name: Recharger nftables
+      ansible.builtin.service: { name: nftables, state: reloaded }
